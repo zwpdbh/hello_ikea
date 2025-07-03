@@ -35,13 +35,14 @@ defmodule HelloWeb.Router do
       #
       # If an authenticated user must *not* be present:
       # on_mount {HelloWeb.LiveUserAuth, :live_no_user}
+
+      live "/", HomeLive
     end
   end
 
   scope "/", HelloWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     auth_routes AuthController, Hello.Accounts.User, path: "/auth"
     sign_out_route AuthController
 

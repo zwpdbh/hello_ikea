@@ -466,4 +466,107 @@ defmodule HelloWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  ## self customized component
+  attr :kind, :string,
+    values: ~w(base primary error),
+    default: "base"
+
+  attr :inverse, :boolean, default: false
+  attr :size, :string, values: ~w(sm xs md), default: "md"
+  attr :class, :string, default: ""
+  attr :rest, :global, include: ~w(navigate disabled patch)
+
+  slot :inner_block
+
+  def button_link(assigns) do
+    assigns =
+      assign(assigns, :theme, button_styles(assigns.kind, assigns.inverse, assigns.size))
+
+    ~H"""
+    <.link
+      class={[
+        @theme,
+        @rest[:disabled] && "opacity-60 grayscale pointer-events-none",
+        @class
+      ]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  def button_styles(kind, inverse, size) do
+    theme =
+      case {kind, inverse} do
+        {"base", false} ->
+          "bg-gray-100"
+
+        {"base", true} ->
+          "border border-gray-500 text-gray-600"
+
+        {"primary", false} ->
+          "bg-primary-600 hover:bg-primary-700 text-white"
+
+        {"primary", true} ->
+          "border border-primary-700 text-primary-700 hover:bg-primary-50 font-semibold"
+
+        {"error", false} ->
+          "bg-error-700 hover:bg-error-800 text-white"
+
+        {"error", true} ->
+          "text-error-600 underline"
+
+        _ ->
+          ""
+      end
+
+    [
+      "phx-submit-loading:opacity-75 rounded-lg font-medium leading-none inline-block",
+      size == "md" && "py-3 px-5 text-sm",
+      size == "sm" && "py-2 px-3 text-sm",
+      size == "xs" && "py-2 px-2 text-xs",
+      theme
+    ]
+  end
+
+  attr :user, :any
+  attr :class, :string, default: ""
+
+  def avatar(assigns) do
+    assigns = assign(assigns, :seed, avatar_seed(assigns.user))
+
+    ~H"""
+    <img
+      class={["rounded-full size-8", @class]}
+      src={"https://api.dicebear.com/9.x/shapes/svg?seed=#{@seed}"}
+    />
+    """
+  end
+
+  def avatar_seed(user) do
+    email =
+      to_string(user.email)
+      |> String.trim()
+      |> String.downcase()
+
+    :crypto.hash(:sha256, email)
+    |> Base.encode16(case: :lower)
+  end
+
+  def toggle(js \\ %JS{}, selector) do
+    JS.toggle(js,
+      to: selector,
+      time: 300,
+      in:
+        {"transition-all transform ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"},
+      out:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
+  end
 end

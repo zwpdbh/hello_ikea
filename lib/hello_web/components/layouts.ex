@@ -41,18 +41,7 @@ defmodule HelloWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
+            <.user_info current_user={@current_user} socket={@socket} />
           </li>
         </ul>
       </div>
@@ -65,6 +54,53 @@ defmodule HelloWeb.Layouts do
     </main>
 
     <.flash_group flash={@flash} />
+    """
+  end
+
+  def user_info(assigns) do
+    ~H"""
+    <div class="flex space-x-3 relative items-center">
+      <%= if @current_user do %>
+        {live_render(@socket, HelloWeb.NotificationsLive, sticky: true, id: :notifications_container)}
+
+        <div class="!ml-8">
+          <div
+            tabindex="0"
+            role="button"
+            class="pr-0"
+            phx-click={toggle("#user-menu")}
+            phx-click-away={hide("#user-menu")}
+          >
+            <.avatar user={@current_user} />
+          </div>
+          <ul
+            id="user-menu"
+            tabindex="0"
+            class="hidden z-[1] p-2 mt-3 shadow rounded-lg w-fit-content absolute right-0 bg-white text-sm"
+          >
+            <li class="border-b border-gray-300 p-2 pt-0">
+              <p>
+                Signed in as <strong class="whitespace-nowrap">{@current_user.email}</strong>
+              </p>
+            </li>
+            <li class="border-b border-gray-300 p-2 pt-0">
+              <.link navigate="/me" class="block">
+                <strong class="whitespace-nowrap">My Settings</strong>
+              </.link>
+            </li>
+            <li class="p-2 pb-0"><.link navigate="/sign-out" class="block">Sign out</.link></li>
+          </ul>
+        </div>
+      <% else %>
+        <.button_link navigate="/sign-in" size="xs">
+          Sign In
+        </.button_link>
+        <span>or</span>
+        <.button_link navigate="/register" size="xs">
+          Register
+        </.button_link>
+      <% end %>
+    </div>
     """
   end
 
