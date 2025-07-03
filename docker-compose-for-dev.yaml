@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    # container_name: postgres
+    environment:
+      - POSTGRES_DB=hello
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - hello_postgres_data_pgvector:/var/lib/postgresql/data
+
+  # visit http://localhost:3001, select 
+  # System: PostgreSQL
+  # Server: postgres
+  # Username: postgres
+  # Password: postgres
+  # Database: hello
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "3001:8080"
+    depends_on:
+      - postgres
+
+  livebook:
+    image: ghcr.io/livebook-dev/livebook
+    restart: always
+    # container_name: livebook
+    ports:
+      - "8007:8007"
+      - "8008:8008"
+    environment:
+      - RELEASE_NODE=hello_livebook
+      - LIVEBOOK_DISTRIBUTION=name
+      - LIVEBOOK_COOKIE=some_token
+      - LIVEBOOK_NODE=livebook@127.0.0.1
+      - LIVEBOOK_PORT=8007
+      - LIVEBOOK_IFRAME_PORT=8008
+    user: "${UID}:${GID}"
+    volumes:
+      - ./documents/livebook:/data
+
+volumes:
+  hello_postgres_data_pgvector:
