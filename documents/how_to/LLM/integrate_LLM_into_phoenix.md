@@ -11,3 +11,4 @@
 - [The Unfaltering Machine: Why AI Reinforces the Fundamental Truth of Elixir](https://medium.com/@matheuscamarques/the-unfaltering-machine-why-ai-reinforces-the-fundamental-truth-of-elixir-8dfd71ccb439) 
 - [Using LLMs and AI Agents to super power your Phoenix apps](https://www.youtube.com/watch?v=Hnpt2zv0rVw)
 - [LLMs & Elixir: Windfall or Deathblow?](https://www.zachdaniel.dev/p/llms-and-elixir-windfall-or-deathblow)
+  - [reddit discussion](https://news.ycombinator.com/item?id=44186496)
