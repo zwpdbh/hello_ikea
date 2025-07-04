@@ -12,3 +12,5 @@
 - [Using LLMs and AI Agents to super power your Phoenix apps](https://www.youtube.com/watch?v=Hnpt2zv0rVw)
 - [LLMs & Elixir: Windfall or Deathblow?](https://www.zachdaniel.dev/p/llms-and-elixir-windfall-or-deathblow)
   - [reddit discussion](https://news.ycombinator.com/item?id=44186496)
+- [The Remote AI Runtime for Phoenix](https://phoenix.new/)
+  - [Keynote: Code Generators are Dead. Long Live Code Generators - Chris McCord | ElixirConf EU 2025](https://www.youtube.com/watch?v=ojL_VHc4gLk)
