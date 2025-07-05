@@ -20,21 +20,21 @@ if System.get_env("PHX_SERVER") do
 end
 
 import Dotenvy
-env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./envs") |> dbg()
+env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./envs")
 
 source!([
   Path.absname(".env", env_dir_prefix),
   Path.absname("#{config_env()}.env", env_dir_prefix),
   System.get_env()
 ])
-|> dbg()
 
 config :hello, :llm,
   api_key: env!("OPENAI_API_KEY", :string!),
   embedding_url: "https://api.aimlapi.com/v1/embeddings",
   chat_model: "chatgpt-4o-latest",
   embedding_model: "text-embedding-ada-002",
-  image_gen_url: "https://api.aimlapi.com/v1/images/generations"
+  image_gen_url: "https://api.aimlapi.com/v1/images/generations",
+  chat_endpoint: "https://api.aimlapi.com/v1/chat/completions"
 
 if config_env() == :prod do
   database_url =
