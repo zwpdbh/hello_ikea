@@ -21,7 +21,8 @@ defmodule Hello.Application do
       # {Hello.Worker, arg},
       # Start to serve requests, typically the last entry
       HelloWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :hello]}
+      {AshAuthentication.Supervisor, [otp_app: :hello]},
+      Hello.LLM.Config
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
