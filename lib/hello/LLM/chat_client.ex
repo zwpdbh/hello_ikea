@@ -1,13 +1,18 @@
 defmodule Hello.LLM.ChatClient do
   @moduledoc """
-  Provides functions to send chat prompts to an LLM-compatible API.
+  A client module for interacting with an LLM-compatible chat API.
+
+  This module allows sending prompts to an LLM endpoint, supporting both standard
+  (non-streaming) and streaming responses. It uses the `Req` library to perform HTTP
+  requests and expects the configuration (e.g., endpoint, API key, model) to be provided
+  by `Hello.LLM.Config`.
 
   ## Examples
 
       iex> Hello.LLM.ChatClient.chat("What is the capital of France?")
       {:ok, ["Paris"]}
 
-      iex> Hello.LLM.ChatClient.chat("Tell me a story in 10 words", stream: true)
+      iex> Hello.LLM.ChatClient.chat("tell me a story in 10 words", stream: fn x -> dbg(x) end)
       :ok
 
   This module supports both streamed and non-streamed LLM responses.
@@ -25,8 +30,8 @@ defmodule Hello.LLM.ChatClient do
     ]
   end
 
-  def chat(prompt, opts \\ [stream: false]) do
-    stream? = Keyword.get(opts, :stream, false)
+  def chat(prompt, opts \\ [stream: nil]) do
+    stream_callback = Keyword.get(opts, :stream, nil)
 
     body =
       %{
@@ -39,18 +44,17 @@ defmodule Hello.LLM.ChatClient do
           }
         ]
       }
-      |> maybe_stream_body(stream?)
+      |> maybe_stream_body(stream_callback)
 
-    if stream? do
-      do_chat_stream(body)
-    else
-      do_chat_normal(body)
+    case stream_callback do
+      nil -> do_chat_normal(body)
+      _ -> do_chat_stream(body, stream_callback)
     end
   end
 
-  defp maybe_stream_body(body, false), do: body
+  defp maybe_stream_body(body, nil), do: body
 
-  defp maybe_stream_body(body, true) do
+  defp maybe_stream_body(body, stream_callback) when is_function(stream_callback) do
     Map.merge(body, %{
       "stream" => true,
       "stream_options" => %{"include_usage" => true}
@@ -71,19 +75,17 @@ defmodule Hello.LLM.ChatClient do
     end
   end
 
-  defp do_chat_stream(body) do
+  defp do_chat_stream(body, stream_callback) do
     Req.new(
       url: endpoint(),
       headers: headers(),
       json: body,
-      into: &process_stream/2
+      into: fn {:data, data}, acc ->
+        data |> parse() |> Enum.each(stream_callback)
+        {:cont, acc}
+      end
     )
     |> Req.post()
-  end
-
-  defp process_stream({:data, data}, acc) do
-    data |> parse() |> Enum.each(&callback/1)
-    {:cont, acc}
   end
 
   defp parse(chunk) do
@@ -97,8 +99,4 @@ defmodule Hello.LLM.ChatClient do
   defp decode(""), do: nil
   defp decode("[DONE]"), do: nil
   defp decode(data), do: Jason.decode!(data)
-
-  def callback(x) do
-    x |> dbg()
-  end
 end
