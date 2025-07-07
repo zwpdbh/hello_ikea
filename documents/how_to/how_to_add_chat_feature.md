@@ -47,6 +47,57 @@ content-type: application/x-ndjson; charset=utf-8
 
 ## Notes from implement features from `Streaming OpenAI in Elixir Phoenix Part II`. 
 
+Current status of parsing.
+
+```elixir 
+  defp parse(chunk) do
+    chunk
+    |> dbg()
+    |> String.split("data: ")
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(&decode/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp decode(""), do: nil
+  defp decode("[DONE]"), do: nil
+  defp decode(data), do: Jason.decode!(data)
+```
+
+It relys on the fact the each chunk must be zero or more complete events.
+
+```sh
+[(hello 0.1.0) lib/hello/LLM/chat_client.ex:84: Hello.LLM.ChatClient.parse/1]
+chunk #=> "data: {\"id\":\"chatcmpl-BqaxTMJAA7ZffdVrhjxaX1iDa3Sjz\",\"choices\":[{\"delta\":{\"content\":\"Dog\",\"refusal\":null},\"index\":0,\"finish_reason\":null}],\"created\":1751874823,\"model\":\"chatgpt-4o-latest\",\"object\":\"chat.completion.chunk\",\"usage\":null,\"system_fingerprint\":\"fp_afccf7958a\"}\n\ndata: {\"id\":\"chatcmpl-BqaxTMJAA7ZffdVrhjxaX1iDa3Sjz\",\"choices\":[{\"delta\":{\"content\":\" found\",\"refusal\":null},\"index\":0,\"finish_reason\":null}],\"created\":1751874823,\"model\":\"chatgpt-4o-latest\",\"object\":\"chat.completion.chunk\",\"usage\":null,\"system_fingerprint\":\"fp_afccf7958a\"}\n\n"
+
+[(hello 0.1.0) lib/playground.ex:21: Playground.chat_stream/0]
+x #=> %{
+  "choices" => [
+    %{
+      "delta" => %{"content" => "Dog", "refusal" => nil},
+      "finish_reason" => nil,
+      "index" => 0
+    }
+  ],
+  "created" => 1751874823,
+  "id" => "chatcmpl-BqaxTMJAA7ZffdVrhjxaX1iDa3Sjz",
+  "model" => "chatgpt-4o-latest",
+  "object" => "chat.completion.chunk",
+  "system_fingerprint" => "fp_afccf7958a",
+  "usage" => nil
+}
+```
+
+What if the bytes that comprise one or more of the events in the stream arrive at different times?
+It means in a complete message is attrived in two events. Then the parsing will failed.
+
+HTTP buffering -- Some server environments will buffer data and send the data to the client once the buffer reaches a certain size.
+It’s possible there is a proxy (or some other middleman) that sits between the source server and the client. 
+If this is the case, it’s possible that a client reading from a stream of events will 
+receive portions of an event at a time and thus be responsible for stringing them back together.
+
+Solution: introduce state into our parser.
+
 
 ## References 
 - [Getting started with AshJsonApi](https://hexdocs.pm/ash_json_api/1.4.36/getting-started-with-ash-json-api.html)
