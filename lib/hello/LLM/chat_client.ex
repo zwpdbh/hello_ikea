@@ -30,20 +30,12 @@ defmodule Hello.LLM.ChatClient do
     ]
   end
 
-  def chat(prompt, opts \\ [stream: nil]) do
+  def chat(request, opts \\ [stream: nil]) do
+    request |> dbg()
     stream_callback = Keyword.get(opts, :stream, nil)
 
     body =
-      %{
-        "model" => Hello.LLM.Config.get().chat_model,
-        "messages" => [
-          %{
-            "role" => "user",
-            "content" => prompt,
-            "name" => "text"
-          }
-        ]
-      }
+      request
       |> maybe_stream_body(stream_callback)
 
     case stream_callback do
