@@ -98,8 +98,16 @@ receive portions of an event at a time and thus be responsible for stringing the
 
 Solution: introduce state into our parser.
 
+- Step01, rework the parse to remove the assumption that an entire event is present at once. 
+  - That this moment, when doing unit test, we could still test it with complete event.
+  - It is just we added a buffer to the `parse` interface function to parse the chunk one character at a time. 
+
+- Step02, the `buffer` introduced from `Step01` is constant and doesn't have state between the arrival of different chunks. 
+  - So, we use `Agent` to update it between the arrival of different chunks. in `into` callback function of `Req.new`.
 
 ## References 
 - [Getting started with AshJsonApi](https://hexdocs.pm/ash_json_api/1.4.36/getting-started-with-ash-json-api.html)
 - [Streaming OpenAI in Elixir Phoenix](https://benreinhart.com/blog/openai-streaming-elixir-phoenix/?utm_source=elixir-merge)
 - [Streaming OpenAI in Elixir Phoenix Part II](https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-2/)
+  - [Learn parser: A robust and efficient decoder and encoder for the KDL Document Language in Elixir](https://github.com/benjreinhart/ex_kdl)
+- [Streaming OpenAI in Elixir Phoenix Part III](https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-3/)
