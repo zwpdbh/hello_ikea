@@ -37,6 +37,7 @@ defmodule HelloWeb.Router do
       # on_mount {HelloWeb.LiveUserAuth, :live_no_user}
 
       live "/", HomeLive
+      live "/chats", ChatLive.Index, :index
     end
   end
 
