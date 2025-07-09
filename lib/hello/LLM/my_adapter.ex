@@ -3,6 +3,32 @@ defmodule Hello.LLM.MyAdapter do
   Use https://hexdocs.pm/instructor_lite/custom-ollama-adapter.html
   to write our own adapter
   You could use `InstructorLite.Adapters.OpenAI` as reference.
+
+
+  [OpenAI](https://platform.openai.com/docs/overview) adapter.
+
+  This adapter is implemented using
+  [responses](https://platform.openai.com/docs/api-reference/responses) endpoint
+  and [structured
+  outputs](https://platform.openai.com/docs/guides/structured-outputs/structured-outputs).
+
+  ## Params
+  `params` argument should be shaped as a [Create model response request
+  body](https://platform.openai.com/docs/api-reference/responses/create).
+
+  ## Example
+
+  ```
+  InstructorLite.instruct(%{
+      input: [%{role: "user", content: "John is 25yo"}],
+      model: "gpt-4o-mini",
+      service_tier: "default"
+    },
+    response_model: %{name: :string, age: :integer},
+    adapter: InstructorLite.Adapters.OpenAI,
+    adapter_context: [api_key: Application.fetch_env!(:instructor_lite, :openai_key)]
+  )
+  {:ok, %{name: "John", age: 25}}
   """
   @behaviour InstructorLite.Adapter
   @default_model "gpt-4o-mini"
@@ -38,20 +64,22 @@ defmodule Hello.LLM.MyAdapter do
   #{NimbleOptions.docs(@send_request_schema)}
   """
   @impl InstructorLite.Adapter
-  def send_request(params, opts) do
-    context =
-      opts
-      |> Keyword.get(:adapter_context, [])
-      |> NimbleOptions.validate!(@send_request_schema)
+  def send_request(_params, _opts) do
+    # context =
+    #   opts
+    #   |> Keyword.get(:adapter_context, [])
+    #   |> NimbleOptions.validate!(@send_request_schema)
 
-    options =
-      Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
+    # options =
+    #   Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
 
-    case context[:http_client].post(context[:url], options) do
-      {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
-      {:ok, response} -> {:error, response}
-      {:error, reason} -> {:error, reason}
-    end
+    # case context[:http_client].post(context[:url], options) do
+    #   {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
+    #   {:ok, response} -> {:error, response}
+    #   {:error, reason} -> {:error, reason}
+    # end
+
+    {:ok, MyAdapterTest.dummy_response()}
   end
 
   @doc """
@@ -117,13 +145,36 @@ defmodule Hello.LLM.MyAdapter do
     end
   end
 
+  @doc """
+  Parse chat completion endpoint response.
+
+  Can return:
+    * `{:ok, parsed_json}` on success.
+    * `{:error, :refusal, reason}` on [refusal](https://platform.openai.com/docs/guides/structured-outputs/refusals).
+    * `{:error, :unexpected_response, response}` if response is of unexpected shape.
+  """
   @impl InstructorLite.Adapter
   def parse_response(response, _opts) do
     case response do
+      %{"output" => output} ->
+        Enum.find_value(output, {:error, :unexpected_response, response}, fn
+          %{"role" => "assistant", "content" => [%{"text" => text}]} ->
+            InstructorLite.JSON.decode(text)
+
+          %{"role" => "assistant", "content" => [%{"refusal" => reason}]} ->
+            {:error, :refusal, reason}
+
+          _ ->
+            false
+        end)
+
       %{"choices" => [%{"message" => message}]} ->
         case message do
           %{"role" => "assistant", "refusal" => nil, "content" => content} ->
-            InstructorLite.JSON.decode(content)
+            # content
+            # |> InstructorLite.JSON.decode()
+            # |> dbg()
+            {:ok, content}
 
           %{"role" => "assistant", "refusal" => reason} ->
             {:error, :refusal, reason}
@@ -172,5 +223,9 @@ defmodule MyAdapterTest do
 
   def parse_response() do
     @response |> Hello.LLM.MyAdapter.parse_response([])
+  end
+
+  def dummy_response do
+    @response
   end
 end
