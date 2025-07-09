@@ -7,6 +7,7 @@ defmodule Hello.LLM.Config do
   """
 
   defstruct api_key: nil,
+            base_url: nil,
             embedding_url: nil,
             embedding_model: nil,
             image_gen_url: nil,
@@ -32,14 +33,16 @@ defmodule Hello.LLM.Config do
   @impl true
   def init(_init_arg) do
     config = Application.get_env(:hello, :llm, [])
+    base_url = config[:base_url]
 
     state = %__MODULE__{
       api_key: config[:api_key],
-      embedding_url: config[:embedding_url],
+      base_url: config[:base_url],
       embedding_model: config[:embedding_model],
-      image_gen_url: config[:image_gen_url],
       chat_model: config[:chat_model],
-      chat_endpoint: config[:chat_endpoint]
+      embedding_url: "#{base_url}/embeddings",
+      image_gen_url: "#{base_url}/images/generations",
+      chat_endpoint: "#{base_url}/chat/completions"
     }
 
     {:ok, state} |> dbg()
