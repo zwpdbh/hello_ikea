@@ -59,40 +59,18 @@ defmodule Hello.Documents.ArticleBuilder do
   defp run_query(messages, response_model) do
     config = Hello.LLM.Config.get()
 
-    result =
+    {:ok, response} =
       InstructorLite.instruct(
-        %{
-          messages: messages,
-          model: config.chat_model
-        },
+        %{messages: messages, model: config.chat_model},
         response_model: response_model,
         adapter_context: [
           api_key: config.api_key,
           url: config.chat_endpoint
-        ]
+        ],
+        adapter: Hello.LLM.MyAdapter
       )
 
-    case result do
-      {:ok, response} ->
-        {:ok, response,
-         messages ++ [%{role: :assistant, content: response_model.represent(response)}]}
-
-      {:error, %Req.Response{status: 201, body: body}} ->
-        # Parse the content manually if you want to
-        {:ok,
-         response_model.__struct__(
-           response: body["choices"] |> List.first() |> get_in(["message", "content"])
-         ),
-         messages ++
-           [
-             %{
-               role: :assistant,
-               content: body["choices"] |> List.first() |> get_in(["message", "content"])
-             }
-           ]}
-
-      {:error, other} ->
-        {:error, other}
-    end
+    {:ok, response,
+     messages ++ [%{role: :assistant, content: response_model.represent(response)}]}
   end
 end
