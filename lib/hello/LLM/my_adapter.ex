@@ -63,22 +63,26 @@ defmodule Hello.LLM.MyAdapter do
 
   #{NimbleOptions.docs(@send_request_schema)}
   """
+
+  # @impl InstructorLite.Adapter
+  # def send_request(params, opts) do
+  #   context =
+  #     opts
+  #     |> Keyword.get(:adapter_context, [])
+  #     |> NimbleOptions.validate!(@send_request_schema)
+
+  #   options =
+  #     Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
+
+  #   case context[:http_client].post(context[:url], options) do
+  #     {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
+  #     {:ok, response} -> {:error, response}
+  #     {:error, reason} -> {:error, reason}
+  #   end
+  # end
+
   @impl InstructorLite.Adapter
   def send_request(_params, _opts) do
-    # context =
-    #   opts
-    #   |> Keyword.get(:adapter_context, [])
-    #   |> NimbleOptions.validate!(@send_request_schema)
-
-    # options =
-    #   Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
-
-    # case context[:http_client].post(context[:url], options) do
-    #   {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
-    #   {:ok, response} -> {:error, response}
-    #   {:error, reason} -> {:error, reason}
-    # end
-
     {:ok, MyAdapterTest.dummy_response()}
   end
 
@@ -171,10 +175,7 @@ defmodule Hello.LLM.MyAdapter do
       %{"choices" => [%{"message" => message}]} ->
         case message do
           %{"role" => "assistant", "refusal" => nil, "content" => content} ->
-            # content
-            # |> InstructorLite.JSON.decode()
-            # |> dbg()
-            {:ok, content}
+            {:ok, %{response: content}}
 
           %{"role" => "assistant", "refusal" => reason} ->
             {:error, :refusal, reason}

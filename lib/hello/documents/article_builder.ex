@@ -57,6 +57,7 @@ defmodule Hello.Documents.ArticleBuilder do
   end
 
   defp run_query(messages, response_model) do
+    response_model |> dbg()
     config = Hello.LLM.Config.get()
 
     {:ok, response} =
@@ -69,6 +70,8 @@ defmodule Hello.Documents.ArticleBuilder do
         ],
         adapter: Hello.LLM.MyAdapter
       )
+
+    response |> dbg()
 
     {:ok, response,
      messages ++ [%{role: :assistant, content: response_model.represent(response)}]}
