@@ -35,11 +35,16 @@ defmodule HelloWeb.Layouts do
       <div class="flex-1">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
           <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
+          <span class="text-sm font-semibold">Home</span>
         </a>
       </div>
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
+          <li>
+            <.link navigate={~p"/chats"} class="font-semibold text-gray-700 hover:text-gray-900">
+              chat
+            </.link>
+          </li>
           <li>
             <.user_info current_user={@current_user} socket={@socket} />
           </li>

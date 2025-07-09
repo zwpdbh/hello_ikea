@@ -30,20 +30,11 @@ defmodule Hello.LLM.ChatClient do
     ]
   end
 
-  def chat(prompt, opts \\ [stream: nil]) do
+  def chat(request, opts \\ [stream: nil]) do
     stream_callback = Keyword.get(opts, :stream, nil)
 
     body =
-      %{
-        "model" => Hello.LLM.Config.get().chat_model,
-        "messages" => [
-          %{
-            "role" => "user",
-            "content" => prompt,
-            "name" => "text"
-          }
-        ]
-      }
+      request
       |> maybe_stream_body(stream_callback)
 
     case stream_callback do
@@ -76,27 +67,73 @@ defmodule Hello.LLM.ChatClient do
   end
 
   defp do_chat_stream(body, stream_callback) do
+    # Initialize buffer state
+    {:ok, agent} = Agent.start_link(fn -> [] end)
+
     Req.new(
       url: endpoint(),
       headers: headers(),
       json: body,
       into: fn {:data, data}, acc ->
-        data |> parse() |> Enum.each(stream_callback)
+        # v1
+        # data |> parse() |> Enum.each(stream_callback)
+
+        # v2.a
+        # {_buffer, events} = parsev2([], data)
+        # Enum.each(events, stream_callback)
+
+        # v2.b The agent preserves the buffer between the arrival of different chunks.
+        buffer = Agent.get(agent, & &1)
+        {buffer, events} = parsev2(buffer, data)
+        Enum.each(events, stream_callback)
+
+        # update buffer value with the result from calling parse/2
+        :ok = Agent.update(agent, fn _ -> buffer end)
+
         {:cont, acc}
       end
     )
     |> Req.post()
   end
 
-  defp parse(chunk) do
-    chunk
-    |> String.split("data: ")
-    |> Enum.map(&String.trim/1)
-    |> Enum.map(&decode/1)
-    |> Enum.reject(&is_nil/1)
+  # defp parse(chunk) do
+  #   chunk
+  #   |> dbg()
+  #   |> String.split("data: ")
+  #   |> Enum.map(&String.trim/1)
+  #   |> Enum.map(&decode/1)
+  #   |> Enum.reject(&is_nil/1)
+  # end
+
+  # defp decode(""), do: nil
+  # defp decode("[DONE]"), do: nil
+  # defp decode(data), do: Jason.decode!(data)
+
+  # Different from v1 such that it use buffer as state to track the current event
+  # and only emit the event when the event is complete.
+  def parsev2(buffer, chunk) do
+    parsev2(buffer, chunk, [])
   end
 
-  defp decode(""), do: nil
-  defp decode("[DONE]"), do: nil
-  defp decode(data), do: Jason.decode!(data)
+  # This clause matches when the buffer ends with a newline
+  # and the chunk starts with a newline.
+  defp parsev2([buffer | "\n"], "\n" <> rest, events) do
+    case IO.iodata_to_binary(buffer) do
+      "data: [DONE]" ->
+        parsev2([], rest, events)
+
+      "data: " <> event ->
+        parsev2([], rest, [Jason.decode!(event) | events])
+    end
+  end
+
+  # This function is used to eat the chunk one char at a time.
+  defp parsev2(buffer, <<char::utf8, rest::binary>>, events) do
+    parsev2([buffer | <<char::utf8>>], rest, events)
+  end
+
+  # When there is no more chunk, return the reversed events
+  defp parsev2(buffer, "", events) do
+    {buffer, Enum.reverse(events)}
+  end
 end
