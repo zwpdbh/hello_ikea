@@ -1,16 +1,24 @@
 defmodule Hello.Documents.ArticleBuilder do
+  @moduledoc """
+  Demo Workflow 1: Prompt chaining
+  1. Given context generate outline
+  2. Use outline generate article
+  3. Translate the article into spanish
+  """
   alias Hello.Documents.Article
   alias Hello.Documents.Outline
 
+  # For example:
+  # Hello.Documents.ArticleBuilder.generate_content("Impact of AI on white collar jobs")
   def generate_content(topic) do
     initial_messages = [
       %{role: :system, content: "You are an expert at crafting SEO friendly blog articles"}
     ]
 
-    with {:outline, {:ok, _outline, outline_messages}} <-
+    with {:outline, {:ok, outline, outline_messages}} <-
            {:outline, create_outline(initial_messages, topic)},
          {:article, {:ok, article, _article_messages}} <-
-           {:article, create_article(outline_messages)},
+           {:article, create_article(outline_messages, outline)},
          {:translation, {:ok, translated_article, _translated_messages}} <-
            {:translation, translate_to(article, "german")} do
       {article, translated_article}
@@ -32,12 +40,33 @@ defmodule Hello.Documents.ArticleBuilder do
     run_query(messages, Outline)
   end
 
-  def create_article(messages) do
+  # Currently there is a problem:
+  # Article body gets generated, but then fails
+  # because the response JSON is too long, so it is malformed
+  def create_article(messages, _outline) do
     messages =
-      messages ++
-        [%{role: :user, content: "Please generate a full article based on the provided outline"}]
+      (messages ++
+         [%{role: :user, content: "Please generate a full article based on the provided outline"}])
+      |> dbg()
 
     run_query(messages, Article)
+  end
+
+  def create_article_v2(messages) do
+    # Extract the outline first and then generate section by section
+    {:ok, %Outline{outline: sections}, _} = run_query(messages, Outline)
+
+    article_sections =
+      Enum.map(sections, fn section ->
+        article_messages =
+          messages ++ [%{role: :user, content: "Write the section: #{section}"}]
+
+        {:ok, %Article{response: content}, _} = run_query(article_messages, Article)
+        "## #{section}\n\n#{content}"
+      end)
+
+    full_article = Enum.join(article_sections, "\n\n")
+    {:ok, %Article{response: full_article}, messages}
   end
 
   def translate_to(%Article{response: content}, language \\ "spanish") do
@@ -57,21 +86,18 @@ defmodule Hello.Documents.ArticleBuilder do
   end
 
   defp run_query(messages, response_model) do
-    response_model |> dbg()
     config = Hello.LLM.Config.get()
 
     {:ok, response} =
       InstructorLite.instruct(
         %{messages: messages, model: config.chat_model},
         response_model: response_model,
+        adapter: Hello.LLM.MyAdapter,
         adapter_context: [
           api_key: config.api_key,
           url: config.chat_endpoint
-        ],
-        adapter: Hello.LLM.MyAdapter
+        ]
       )
-
-    response |> dbg()
 
     {:ok, response,
      messages ++ [%{role: :assistant, content: response_model.represent(response)}]}

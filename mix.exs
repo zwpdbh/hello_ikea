@@ -72,7 +72,7 @@ defmodule Hello.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:instructor_lite, "~> 1.0.0"},
+      {:instructor_lite, path: "~/code/elixir_programming/examples/instructor_lite"},
       {:dotenvy, "~> 1.1.0"},
       {:pgvector, "~> 0.3.0"}
     ]

@@ -1,43 +1,39 @@
 defmodule Hello.LLM.MyAdapter do
   @moduledoc """
-  Use https://hexdocs.pm/instructor_lite/custom-ollama-adapter.html
-  to write our own adapter
-  You could use `InstructorLite.Adapters.OpenAI` as reference.
+  Adapter for Chat Completions-compatible API endpoints, such as [OpenAI](https://platform.openai.com/docs/api-reference/chat) or [Grok](https://docs.x.ai/docs/api-reference#chat-completions).
 
-
-  [OpenAI](https://platform.openai.com/docs/overview) adapter.
-
-  This adapter is implemented using
-  [responses](https://platform.openai.com/docs/api-reference/responses) endpoint
-  and [structured
-  outputs](https://platform.openai.com/docs/guides/structured-outputs/structured-outputs).
+  This adapter uses [structured outputs](https://platform.openai.com/docs/guides/structured-outputs/structured-outputs).
 
   ## Params
-  `params` argument should be shaped as a [Create model response request
-  body](https://platform.openai.com/docs/api-reference/responses/create).
+  `params` argument should be shaped as a [Create chat completion request body](https://platform.openai.com/docs/api-reference/chat/create).
 
   ## Example
 
   ```
   InstructorLite.instruct(%{
-      input: [%{role: "user", content: "John is 25yo"}],
+      messages: [%{role: "user", content: "John is 25yo"}],
       model: "gpt-4o-mini",
       service_tier: "default"
     },
     response_model: %{name: :string, age: :integer},
-    adapter: InstructorLite.Adapters.OpenAI,
-    adapter_context: [api_key: Application.fetch_env!(:instructor_lite, :openai_key)]
+    adapter: InstructorLite.Adapters.ChatCompletionsCompatible,
+    adapter_context: [
+      api_key: Application.fetch_env!(:instructor_lite, :openai_key),
+      url: "https://api.openai.com/v1/chat/completions"
+    ]
   )
   {:ok, %{name: "John", age: 25}}
+  ```
   """
   @behaviour InstructorLite.Adapter
+
   @default_model "gpt-4o-mini"
 
   @send_request_schema NimbleOptions.new!(
                          api_key: [
                            type: :string,
                            required: true,
-                           doc: "OpenAI API key"
+                           doc: "API key"
                          ],
                          http_client: [
                            type: :atom,
@@ -51,102 +47,76 @@ defmodule Hello.LLM.MyAdapter do
                          ],
                          url: [
                            type: :string,
-                           default: "https://api.openai.com/v1/responses",
+                           default: "https://api.openai.com/v1/chat/completions",
                            doc: "API endpoint to use for sending requests"
                          ]
                        )
 
   @doc """
-  Make request to OpenAI API.
+  Make request to API.
 
   ## Options
 
   #{NimbleOptions.docs(@send_request_schema)}
   """
-
-  # @impl InstructorLite.Adapter
-  # def send_request(params, opts) do
-  #   context =
-  #     opts
-  #     |> Keyword.get(:adapter_context, [])
-  #     |> NimbleOptions.validate!(@send_request_schema)
-
-  #   options =
-  #     Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
-
-  #   case context[:http_client].post(context[:url], options) do
-  #     {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
-  #     {:ok, response} -> {:error, response}
-  #     {:error, reason} -> {:error, reason}
-  #   end
-  # end
-
   @impl InstructorLite.Adapter
-  def send_request(_params, _opts) do
-    {:ok, MyAdapterTest.dummy_response()}
+  def send_request(params, opts) do
+    context =
+      opts
+      |> Keyword.get(:adapter_context, [])
+      |> NimbleOptions.validate!(@send_request_schema)
+
+    options =
+      Keyword.merge(context[:http_options], json: params, auth: {:bearer, context[:api_key]})
+
+    case context[:http_client].post(context[:url], options) do
+      {:ok, %{status: status_code, body: body}} when status_code in [200, 201] -> {:ok, body}
+      {:ok, response} -> {:error, response}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
   Updates `params` with prompt based on `json_schema` and `notes`.
 
-  It uses `instructions` parameter for system prompt.
-
   Also specifies default `#{@default_model}` model if not provided by a user.
   """
   @impl InstructorLite.Adapter
   def initial_prompt(params, opts) do
+    sys_message = [
+      %{
+        role: "system",
+        content: InstructorLite.Prompt.prompt(opts)
+      }
+    ]
+
     params
     |> Map.put_new(:model, @default_model)
-    |> Map.put_new(:text, %{
-      format: %{
-        type: "json_schema",
+    |> Map.put_new(:response_format, %{
+      type: "json_schema",
+      json_schema: %{
         name: "schema",
         strict: true,
         schema: Keyword.fetch!(opts, :json_schema)
       }
     })
-    |> Map.put_new(:instructions, InstructorLite.Prompt.prompt(opts))
+    |> Map.update(:messages, sys_message, fn msgs -> sys_message ++ msgs end)
   end
 
   @doc """
   Updates `params` with prompt for retrying a request.
-
-  If the initial request was made with conversation state (enabled by
-  default), it will drop previous chat messages from the request and specify
-  `previous_response_id` instead. If conversation state is disabled, it will
-  append new messages to the previous `input` the same way chat completions-based
-  adapters do.
   """
   @impl InstructorLite.Adapter
-  def retry_prompt(params, resp_params, errors, response, _opts) do
+  def retry_prompt(params, resp_params, errors, _response, _opts) do
     do_better = [
+      %{role: "assistant", content: InstructorLite.JSON.encode!(resp_params)},
       %{
         role: "system",
         content: InstructorLite.Prompt.validation_failed(errors)
       }
     ]
 
-    case response do
-      %{"store" => true, "id" => response_id} ->
-        params
-        |> Map.put(:input, do_better)
-        |> Map.put(:previous_response_id, response_id)
-        |> Map.delete(:instructions)
-
-      _ ->
-        Map.update!(params, :input, fn input ->
-          assistant_response = %{
-            role: "assistant",
-            content: InstructorLite.JSON.encode!(resp_params)
-          }
-
-          if is_binary(input) do
-            [%{role: "user", content: input}, assistant_response | do_better]
-          else
-            input ++ [assistant_response | do_better]
-          end
-        end)
-    end
+    Map.update(params, :messages, do_better, fn msgs -> msgs ++ do_better end)
   end
 
   @doc """
@@ -159,27 +129,16 @@ defmodule Hello.LLM.MyAdapter do
   """
   @impl InstructorLite.Adapter
   def parse_response(response, _opts) do
+    # response |> dbg()
+
     case response do
-      %{"output" => output} ->
-        Enum.find_value(output, {:error, :unexpected_response, response}, fn
-          %{"role" => "assistant", "content" => [%{"text" => text}]} ->
-            InstructorLite.JSON.decode(text)
+      %{"choices" => [%{"message" => %{"content" => json, "refusal" => nil}}]} ->
+        json |> dbg()
 
-          %{"role" => "assistant", "content" => [%{"refusal" => reason}]} ->
-            {:error, :refusal, reason}
+        InstructorLite.JSON.decode(json) |> dbg()
 
-          _ ->
-            false
-        end)
-
-      %{"choices" => [%{"message" => message}]} ->
-        case message do
-          %{"role" => "assistant", "refusal" => nil, "content" => content} ->
-            {:ok, %{response: content}}
-
-          %{"role" => "assistant", "refusal" => reason} ->
-            {:error, :refusal, reason}
-        end
+      %{"choices" => [%{"message" => %{"refusal" => refusal}}]} ->
+        {:error, :refusal, refusal}
 
       other ->
         {:error, :unexpected_response, other}
@@ -188,45 +147,77 @@ defmodule Hello.LLM.MyAdapter do
 end
 
 defmodule MyAdapterTest do
-  @response %{
-    "choices" => [
-      %{
-        "finish_reason" => "length",
-        "index" => 0,
-        "logprobs" => nil,
-        "message" => %{
-          "annotations" => [],
-          "content" =>
-            "Certainly! Here's a comprehensive SEO-friendly outline for an article on the topic: **\"Impact of AI on White Collar Jobs\"**.\n\n---\n\n### Article Title:  \n**The Impact of AI on White Collar Jobs: Opportunities, Challenges & the Future of Work**\n\n---\n\n### Meta Description:  \nDiscover how artificial intelligence is transforming white collar jobs across industries. Learn about its benefits, threats, and what the future holds for professionals in the age of AI.\n\n---\n\n### Outline:\n\n#### Introduction\n- Brief explanation of AI and its growing role in modern workplaces.\n- Overview of \"white collar jobs\" and their significance in today's economy.\n- Purpose of the article: to analyze how AI impacts white collar employment.\n\n---\n\n### Section 1: Understanding White Collar Jobs\n- Definition and examples of white collar jobs (e.g., finance, law, healthcare, marketing, administration).\n- Historical context: automation and its effect on labor.\n\n---\n\n### Section 2: Ways AI Is Transforming White Collar Roles\n- Automation of repetitive tasks (e.g., data entry, scheduling, reporting).\n- AI-powered decision-making tools and analytics.\n- Enhancing productivity and reducing human error.\n- Examples by industry:\n  - Finance: robo-advisors, fraud detection\n  - Legal: contract review, legal research\n  - Healthcare: diagnostic tools, medical imaging\n  - Marketing: customer segmentation, content generation\n\n---\n\n### Section 3: Benefits of AI for White Collar Workers\n- Increased efficiency and time savings\n- Opportunity to focus on higher-level creative and strategic tasks\n- Improved accuracy and insights for better decision-making\n- Potential for job augmentation rather than job elimination\n\n---\n\n### Section 4: Challenges and Concerns\n- Risk of job displacement and redundancy\n- Need for reskilling and upskilling\n- Ethical considerations (e.g., bias in algorithms, transparency)\n- Data privacy and security concerns\n\n---\n\n### Section 5: The Future of White Collar Work in the Age of AI\n- Emergence of new job roles and industries\n- The importance of human-AI collaboration\n- Predictions from industry experts and reports (e.g., McKinsey, PwC)\n- Preparing the workforce: education and policy implications\n\n---\n\n### Section 6: What Professionals Can Do to Adapt\n- Embrace lifelong learning and digital literacy\n- Build expertise in areas difficult to automate (e.g., emotional intelligence, leadership, creative thinking)\n- Leverage AI tools to enhance personal performance\n\n---\n\n### Conclusion\n- Recap of the key impacts of",
-          "refusal" => nil,
-          "role" => "assistant"
+  def case01() do
+    %{
+      "choices" => [
+        %{
+          "finish_reason" => "stop",
+          "index" => 0,
+          "logprobs" => nil,
+          "message" => %{
+            "annotations" => [],
+            "content" =>
+              "{\"outline\":[\"Introduction to Sci-Fi as a Genre\",\"Elements of a Simple Sci-Fi Story\",\"Creating Your Sci-Fi Characters\",\"Setting the Scene: Futuristic Worlds\",\"Developing a Basic Plot Structure\",\"Incorporating Sci-Fi Concepts: Technology and Alien Life\",\"Writing Dialogue for Sci-Fi Characters\",\"Crafting the Conflict: Man vs. Nature, Man vs. Self, or Man vs. Society\",\"Concluding Your Story: Resolutions and Lessons Learned\",\"Editing and Revising Your Sci-Fi Story\",\"Publishing and Sharing Your Sci-Fi Story\"]}",
+            "refusal" => nil,
+            "role" => "assistant"
+          }
         }
+      ],
+      "created" => 1_752_122_186,
+      "id" => "chatcmpl-BrdJClsKvFzZ9BrRpgG4up4vVwYPr",
+      "model" => "gpt-4o-mini-2024-07-18",
+      "object" => "chat.completion",
+      "system_fingerprint" => "fp_34a54ae93c",
+      "usage" => %{
+        "completion_tokens" => 137,
+        "completion_tokens_details" => %{
+          "accepted_prediction_tokens" => 0,
+          "audio_tokens" => 0,
+          "reasoning_tokens" => 0,
+          "rejected_prediction_tokens" => 0
+        },
+        "prompt_tokens" => 46,
+        "prompt_tokens_details" => %{"audio_tokens" => 0, "cached_tokens" => 0},
+        "total_tokens" => 183
       }
-    ],
-    "created" => 1_752_055_398,
-    "id" => "chatcmpl-BrLvyknF0VEFpdBN0B2faOa8keF22",
-    "model" => "chatgpt-4o-latest",
-    "object" => "chat.completion",
-    "system_fingerprint" => "fp_afccf7958a",
-    "usage" => %{
-      "completion_tokens" => 16128,
-      "completion_tokens_details" => %{
-        "accepted_prediction_tokens" => 0,
-        "audio_tokens" => 0,
-        "reasoning_tokens" => 0,
-        "rejected_prediction_tokens" => 0
-      },
-      "prompt_tokens" => 410,
-      "prompt_tokens_details" => %{"audio_tokens" => 0, "cached_tokens" => 0},
-      "total_tokens" => 16538
     }
-  }
-
-  def parse_response() do
-    @response |> Hello.LLM.MyAdapter.parse_response([])
+    |> Hello.LLM.MyAdapter.parse_response([])
   end
 
-  def dummy_response do
-    @response
+  def case02() do
+    %{
+      "choices" => [
+        %{
+          "finish_reason" => "length",
+          "index" => 0,
+          "logprobs" => nil,
+          "message" => %{
+            "annotations" => [],
+            "content" =>
+              "{\"response\":\"# Write a Simple Sci-Fi Story: A Beginner's Guide\\n\\nSci-fi, short for science fiction, is a genre that opens the door to limitless possibilities. It allows writers to explore futuristic technologies, alien civilizations, and profound philosophical questions—often shedding light on contemporary social issues through imaginative storytelling. If you’re eager to pen your very own simple sci-fi story, this guide will walk you through the essential elements and provide tips to get your creative juices flowing.\\n\\n## Introduction to Sci-Fi as a Genre\\n\\nThe sci-fi genre is diverse, ranging from space operas to dystopian futures, and even speculative fiction that explores the implications of scientific advances. Understanding the wide range of sub-genres within sci-fi can inspire you to choose a thematic setting or premise that captivates your audience. Whether you're imagining life on Mars or a world governed by AI, remember that at its core, sci-fi is about exploring the unknown.\\n\\n## Elements of a Simple Sci-Fi Story\\n\\nA compelling sci-fi story generally includes several key elements:\\n- **Characters:** Well-developed characters who drive the narrative.\\n- **Setting:** A unique environment that enhances the story's premise.\\n- **Plot:** A clear and engaging storyline with a conflict that needs resolution.\\n- **Themes:** Underlying messages or questions that provoke thought.\\n\\nBy keeping these elements in mind, your story will achieve the depth and intrigue expected from a good sci-fi narrative.\\n\\n## Creating Your Sci-Fi Characters\\n\\nCharacters are the heart of any story. In sci-fi, your characters might be humans, aliens, robots, or any combination thereof. Create characters that are relatable yet complex. Think about their:\\n- Goals\\n- Motivations\\n- Backgrounds\\n- Relationships with other characters\\nEach character should serve a purpose in your narrative and contribute to the overall conflict and resolution.\\n\\n## Setting the Scene: Futuristic Worlds\\n\\nOne of the most exciting aspects of writing sci-fi is creating immersive and believable settings. Consider:\\n- **World-building:** What does your universe look like? What rules govern it?  \\n- **Technology:** How does advanced technology influence everyday life?  \\n- **Society:** What are the cultural norms and conflicts?\\nTake the time to develop your setting, as it will ground your characters and plot in a believable context.\\n\\n## Developing a Basic Plot Structure\\n\\nA simple plot structure often consists of three main parts:\\n1. **Introduction:**",
+            "refusal" => nil,
+            "role" => "assistant"
+          }
+        }
+      ],
+      "created" => 1_752_122_189,
+      "id" => "chatcmpl-BrdJFOlfabnf7KXEQ5pgNUUAvjKP9",
+      "model" => "gpt-4o-mini-2024-07-18",
+      "object" => "chat.completion",
+      "system_fingerprint" => "fp_62a23a81ef",
+      "usage" => %{
+        "completion_tokens" => 645,
+        "completion_tokens_details" => %{
+          "accepted_prediction_tokens" => 0,
+          "audio_tokens" => 0,
+          "reasoning_tokens" => 0,
+          "rejected_prediction_tokens" => 0
+        },
+        "prompt_tokens" => 83,
+        "prompt_tokens_details" => %{"audio_tokens" => 0, "cached_tokens" => 0},
+        "total_tokens" => 728
+      }
+    }
+    |> Hello.LLM.MyAdapter.parse_response([])
   end
 end

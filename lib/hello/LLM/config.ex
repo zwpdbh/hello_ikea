@@ -12,7 +12,8 @@ defmodule Hello.LLM.Config do
             embedding_model: nil,
             image_gen_url: nil,
             chat_model: nil,
-            chat_endpoint: nil
+            chat_endpoint: nil,
+            response_endpoint: nil
 
   @type t :: %__MODULE__{}
 
@@ -42,7 +43,8 @@ defmodule Hello.LLM.Config do
       chat_model: config[:chat_model],
       embedding_url: "#{base_url}/embeddings",
       image_gen_url: "#{base_url}/images/generations",
-      chat_endpoint: "#{base_url}/chat/completions"
+      chat_endpoint: "#{base_url}/chat/completions",
+      response_endpoint: "#{base_url}/responses"
     }
 
     {:ok, state} |> dbg()
