@@ -30,11 +30,13 @@ source!([
 
 config :hello, :llm,
   api_key: env!("OPENAI_API_KEY", :string!),
-  embedding_url: "https://api.aimlapi.com/v1/embeddings",
-  chat_model: "chatgpt-4o-latest",
-  embedding_model: "text-embedding-ada-002",
-  image_gen_url: "https://api.aimlapi.com/v1/images/generations",
-  chat_endpoint: "https://api.aimlapi.com/v1/chat/completions"
+  base_url: "https://api.aimlapi.com/v1",
+  chat_model: "gpt-4o-mini",
+  embedding_model: "text-embedding-ada-002"
+
+# config :instructor, :openai,
+#   api_key: env!("OPENAI_API_KEY", :string!),
+#   api_base: "https://api.aimlapi.com/v1"
 
 if config_env() == :prod do
   database_url =

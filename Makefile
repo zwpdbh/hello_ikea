@@ -1,5 +1,4 @@
-stop_containers:
-	docker stop $(docker ps -q)
+# stop_containers: docker stop $(docker ps -q)
 # FOR DEV LOCALLY
 # This will run livebook with db from docker-compose
 run_db:
