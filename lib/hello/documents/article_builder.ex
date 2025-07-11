@@ -43,7 +43,7 @@ defmodule Hello.Documents.ArticleBuilder do
   # Currently there is a problem:
   # Article body gets generated, but then fails
   # because the response JSON is too long, so it is malformed
-  def create_article(messages, _outline) do
+  def create_article_v1(messages, _outline) do
     messages =
       (messages ++
          [%{role: :user, content: "Please generate a full article based on the provided outline"}])
@@ -52,10 +52,7 @@ defmodule Hello.Documents.ArticleBuilder do
     run_query(messages, Article)
   end
 
-  def create_article_v2(messages) do
-    # Extract the outline first and then generate section by section
-    {:ok, %Outline{outline: sections}, _} = run_query(messages, Outline)
-
+  def create_article(messages, %Outline{outline: sections}) do
     article_sections =
       Enum.map(sections, fn section ->
         article_messages =
