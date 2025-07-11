@@ -14,3 +14,8 @@
   - [reddit discussion](https://news.ycombinator.com/item?id=44186496)
 - [The Remote AI Runtime for Phoenix](https://phoenix.new/)
   - [Keynote: Code Generators are Dead. Long Live Code Generators - Chris McCord | ElixirConf EU 2025](https://www.youtube.com/watch?v=ojL_VHc4gLk)
+- [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
+  - [A library to build RAG (Retrieval Augmented Generation) systems in Elixir.](https://hexdocs.pm/rag/Rag.html)
+  - [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+    - BTW, the `bitcrowd` page layout is good. 
+  - [A RAG for Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
