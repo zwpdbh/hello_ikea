@@ -18,10 +18,49 @@
 ### RAG
 
 - [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
+  - This post introduce how to use plain elixir to build RAG system with following libraries 
+  
+    ```elixir 
+      {:text_chunker, "~> 0.3.1"},
+      {:pgvector, "~> 0.3.0"},
+      {:bumblebee, "~> 0.4.2"},
+      {:exla, "~> 0.6"},
+      {:nx, "~> 0.6"},
+      {:ollama, "0.7.0"}
+    ```
+
 - RAG with Elixir series
   - [How even the simplest RAG can empower your team](https://bitcrowd.dev/how-even-the-simplest-RAG-can-empower-your-team/)
   - [A RAG for Elixir](https://bitcrowd.dev/a-rag-for-elixir/)
   - [A RAG for Elixir in Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
+    
+    see [corresponding livebook demo](https://gist.github.com/joelpaulkoch/9192abd23bd2e6ff76be314c24173974), notice its dependencies related with RAG 
+      
+    ```elixir 
+    {:chroma, "~> 0.1.3"},
+    {:text_chunker, "~> 0.3.1"},
+    {:nx, "~> 0.9.0"},
+    {:exla, "~> 0.9.1"},
+    {:axon, "~> 0.7.0"},
+    {:bumblebee, github: "joelpaulkoch/bumblebee", branch: "jina-embeddings-v2-base-code"}
+    ```
+
   - [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+    - Follow this post, you could enhance an LLM chat app with RAG feature.
     - [Rag -- A library to build RAG (Retrieval Augmented Generation) systems in Elixir.](https://hexdocs.pm/rag/Rag.html)  
+      - This is the `Rag` lib `bitcrowd` introduced.
   - BTW, the `bitcrowd` page layout is good. 
+
+## My RAG exloration 
+
+- Common libs I need 
+
+```elixir 
+{:text_chunker, "~> 0.3.1"}, #  segmenting large text documents, optimizing them for efficient embedding
+{:pgvector, "~> 0.3.0"},  # save embedding vectors 
+{:bumblebee, "~> 0.4.2"}, # use pre-trained Neural Network models -- local LLM model 
+{:axon, "~> 0.7.0"}, # if we don't use `ollama`
+{:exla, "~> 0.6"}, # for axon
+{:nx, "~> 0.6"}, # axon
+{:ollama, "0.7.0"}, # do I need this to run LLM model locally? What feature it provides?
+```
