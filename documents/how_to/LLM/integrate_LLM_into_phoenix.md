@@ -18,10 +18,10 @@
 ### RAG
 
 - [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
-- [A library to build RAG (Retrieval Augmented Generation) systems in Elixir.](https://hexdocs.pm/rag/Rag.html)  
 - RAG with Elixir series
   - [How even the simplest RAG can empower your team](https://bitcrowd.dev/how-even-the-simplest-RAG-can-empower-your-team/)
   - [A RAG for Elixir](https://bitcrowd.dev/a-rag-for-elixir/)
   - [A RAG for Elixir in Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
   - [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+    - [Rag -- A library to build RAG (Retrieval Augmented Generation) systems in Elixir.](https://hexdocs.pm/rag/Rag.html)  
   - BTW, the `bitcrowd` page layout is good. 
