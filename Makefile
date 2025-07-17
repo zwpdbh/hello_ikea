@@ -14,22 +14,11 @@ run_app:
 	make kill_erlang_node
 	iex --erl "-kernel shell_history enabled" --name hello@127.0.0.1 --cookie some_token -S mix phx.server 
 
-# This will run a simple livebook and set the working directory inside the container.
-# `make run_db` could also be used to start a livebook with a db.
+# livebook could be installed using escripts
+# after erlang and elixir is installed, just run: 
+# mix escript.install hex livebook
 run_livebook:
-	docker run \
-		-p 8007:8007 \
-		-p 8008:8008 \
-		-e RELEASE_NODE=hello_livebook \
-		-e LIVEBOOK_DISTRIBUTION=name \
-		-e LIVEBOOK_COOKIE=some_token \
-		-e LIVEBOOK_NODE=livebook@127.0.0.1 \
-		-e LIVEBOOK_PORT=8007 \
-		-e LIVEBOOK_IFRAME_PORT=8008 \
-		-u $(shell id -u):$(shell id -g) \
-		-v $(shell pwd)/documents/livebook:/data \
-		-w /data \
-		ghcr.io/livebook-dev/livebook
+	export LIVEBOOK_HOME=~/code && ~/.asdf/installs/elixir/1.18.4-otp-27/.mix/escripts/livebook server
 
 # For cleanup running dockers 
 cleanup_pods:

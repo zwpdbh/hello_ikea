@@ -1,0 +1,17 @@
+# Train a neural network in 5 mins
+
+```elixir
+Mix.install([
+  {:axon, "~> 0.6"},
+  {:exla, "~> 0.6"},
+  {:nx, "~> 0.10"},
+  {:scidata, "~> 0.1.11"},
+  :kino
+])
+```
+
+## Section
+
+```elixir
+
+```
