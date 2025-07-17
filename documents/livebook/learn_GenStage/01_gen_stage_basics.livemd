@@ -1,0 +1,104 @@
+# 01 Learn GenStage Basics
+
+```elixir
+Mix.install([:gen_stage])
+```
+
+## GenStage Basics
+
+References
+
+* [GenStage behaviour](https://hexdocs.pm/gen_stage/GenStage.html)
+
+For example, imagine the stages below where A sends data to B that sends data to C:
+
+[A] -> [B] -> [C]
+
+* A is a producer that will emit items starting from 0.
+* B is a producer-consumer that will receive those items and multiply them by a given number.
+* C will receive those events and print them to the terminal.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Producer A: Its main responsibility is to receive demand and generate events.
+
+```elixir
+defmodule A do
+  use GenStage
+
+  def start_link(number) do
+    GenStage.start_link(A, number)
+  end
+
+  def init(counter) do
+    {:producer, counter}
+  end
+
+  def handle_demand(demand, counter) when demand > 0 do
+    # If the counter is 3 and we ask for 2 items, we will
+    # emit the items 3 and 4, and set the state to 5.
+    events = Enum.to_list(counter..counter+demand-1)
+    {:noreply, events, counter + demand}
+  end
+end
+```
+
+B is a consumer-producer. This means it does not explicitly handle the demand because the demand is always forwarded to its producer. Once A receives the demand from B, it will send events to B which will be transformed by B as desired. In our case, B will receive events and multiply them by a number given on initialization and stored as the state:
+
+```elixir
+defmodule B do 
+  use GenStage 
+
+  def start_link(multiplier) do
+    GenStage.start_link(B, multiplier)
+  end
+
+  def init(multiplier) do 
+    {:producer_consumer, multiplier}
+  end
+
+  def handle_events(events, _from, multiplier) do
+    events = Enum.map(events, & &1 * multiplier)
+    {:noreply, events, multiplier}
+  end
+end
+```
+
+C will finally receive those events and print them every second to the terminal:
+
+```elixir
+defmodule C do
+  use GenStage
+
+  def start_link(_opts) do
+    GenStage.start_link(C, :ok)
+  end
+
+  def init(:ok) do
+    {:consumer, :the_state_does_not_matter}
+  end
+
+  def handle_events(events, _from, state) do
+    # Wait for a second.
+    Process.sleep(1000)
+
+    # Inspect the events.
+    IO.inspect(events)
+
+    # We are a consumer, so we would never emit items.
+    {:noreply, [], state}
+  end
+end
+```
+
+```elixir
+# Now we can start and connect them:
+{:ok, a} = A.start_link(0)  # starting from zero
+{:ok, b} = B.start_link(2)  # multiply by 2
+{:ok, c} = C.start_link([]) # state does not matter
+
+GenStage.sync_subscribe(c, to: b)
+GenStage.sync_subscribe(b, to: a)
+```
+
+Typically, we subscribe from bottom to top. Since A will start producing items only when B connects to it, we want this subscription to happen when the whole pipeline is ready. After you subscribe all of them, demand will start flowing upstream and events downstream.

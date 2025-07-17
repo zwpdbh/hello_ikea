@@ -1,0 +1,484 @@
+# Talking to Azure Storage and the ARM API - From Erlang
+
+## Section
+
+Full demo on Github: [`chgeuer/elixir-livebook-azure-demo`](https://github.com/chgeuer/elixir-livebook-azure-demo)
+
+## Just enough Elixir to understand the code
+
+```elixir
+12 - 5
+```
+
+The `-` operator is just an infix syntax for the `Kernel.-/2` function, i.e. the function with name `-` in the `Kernel` module, which takes 2 arguments (arity):
+
+```elixir
+Kernel.-(12, 5)
+```
+
+The `|>` (pipe) operator in Elixir pipes the left-hand value *as first argument* into the subsequent function call, i.e. `a |> f(b,c)` is equivalend to `f(a,b,c)`.
+
+Those familiar with F# might see the similarity; the difference is that in F#, the piped argument becomes the last in the function call, i.e. `a |> f(b,c)` in F# is equivalend to `f(b,c,a)`, simply because all functions in F# only have a single argument, so that this is `f(b)(c)(a)`...
+
+```elixir
+12 |> Kernel.-(5)
+```
+
+```elixir
+12
+|> Kernel.-(5)
+```
+
+### Processes and actors
+
+```elixir
+self()
+```
+
+## Pull in the Azure SDK for Elixir/Erlang
+
+The `Mix.install()` function locally installs a collection of software libraries. In this case:
+
+* The `chgeuer/ex_microsoft_azure_storage` contains a REST client for the Azure storage APIs
+* The `chgeuer/ex_microsoft_azure_management` package contains REST APIs for the ARM API
+* The `chgeuer/ex_microsoft_azure_utils` are some helpers handling Azure AD communications
+
+Running this command for the first time times a few minutes, as all the source code gets pulled
+from Github, and all packages (and their dependencies) get compiled.
+
+```elixir
+armSdk = fn (k,v) -> { k,
+  github: "chgeuer/ex_microsoft_azure_management",
+  sparse: "Microsoft.Azure.Management.#{v}",
+  app: false }
+end
+
+[
+  {:azure_utils, github: "chgeuer/ex_microsoft_azure_utils", app: false},
+  armSdk.(:arm_resources, "Resources"),
+  armSdk.(:arm_subscription, "Subscription"),
+  armSdk.(:arm_storage, "Storage"),
+  {:azure_storage, github: "chgeuer/ex_microsoft_azure_storage", app: false}
+]
+|> Mix.install()
+```
+
+The `alias` section is similar to `using` or import statements, as we can omit parts of the module names.
+
+```elixir
+alias Microsoft.Azure.ActiveDirectory.DeviceAuthenticator
+alias Microsoft.Azure.ActiveDirectory.DeviceAuthenticator.Model.State
+alias Microsoft.Azure.ActiveDirectory.DeviceAuthenticatorSupervisor
+alias Microsoft.Azure.Storage
+alias Microsoft.Azure.Storage.{Container, Blob, Queue, BlobStorage}
+```
+
+Store a bunch of ARM API versions in a map:
+
+```elixir
+api_version = %{
+  :resource_groups => "2018-02-01",
+  :subscription => "2016-06-01",
+  :storage => v
+}
+```
+
+And let's start an additional token fetching process for the ARM API `management.azure.com`...
+
+```elixir
+{:ok, management_pid} =
+  %State{
+    resource: "https://management.azure.com/",
+    tenant_id: "chgeuerfte.onmicrosoft.com",
+    azure_environment: :azure_global
+  }
+  |> DeviceAuthenticatorSupervisor.start_link()
+```
+
+```elixir
+management_pid
+```
+
+```elixir
+Process.alive?(management_pid)
+```
+
+Many processes are already running on our VM
+
+```elixir
+:erlang.registered()
+```
+
+```elixir
+management_pid
+|> DeviceAuthenticator.get_stage()
+```
+
+Start the device code flow.
+
+Note the pattern matching here, we get a rather complex structure back from 
+`DeviceAuthenticator.get_device_code/1`, but we only care about the user_code
+
+```elixir
+{:ok, %{user_code: uc}} =
+  management_pid
+  |> DeviceAuthenticator.get_device_code()
+
+"Use user code #{uc}"
+```
+
+Initially, Erlang process (actor) is in `:polling` state:
+
+```elixir
+management_pid
+|> DeviceAuthenticator.get_stage()
+```
+
+Now go to the [microsoft.com/devicelogin](https://microsoft.com/devicelogin)
+
+Now the underlying Erlang process (actor) is in `:refreshing` state, i.e. it has both an `access_token` and a `refresh_token`, and refreshes the `access_token` as needed.
+
+```elixir
+management_pid
+|> DeviceAuthenticator.get_stage()
+```
+
+After authenticated, we can get the token.
+
+```elixir
+{:ok, %{access_token: management_token}} =
+  management_pid
+  |> DeviceAuthenticator.get_token()
+
+IO.puts("The JWT value is\n#{management_token}")
+```
+
+Equivalent C# would be like
+
+```csharp
+Console.WriteLine(
+   String.Join(
+     JWT.Parse(managementToken)
+         .Fields
+         .Select((key, val) => $"{key} {val}")
+         .ToArray()
+     , "\n")); 
+```
+
+```elixir
+management_token
+|> JOSE.JWT.peek()
+|> Map.get(:fields)
+|> Enum.map(fn {k, v} -> "#{k |> String.pad_trailing(12, " ")}: #{inspect(v)}" end)
+|> Enum.join("\n")
+|> IO.puts()
+```
+
+```elixir
+IO.puts("https://jwt.ms/#access_token=#{management_token}")
+```
+
+Now let's create an HTTP client which has our access token:
+
+```elixir
+conn =
+  management_token
+  |> Microsoft.Azure.Management.Resources.Connection.new()
+```
+
+Now call the `subscription_list` API, to get a detailed list of subscriptions, 
+and filter for 'our' subscription.
+
+```csharp
+subscriptionName = Console.ReadLine().Trim();
+
+subscriptionID = client
+   .GetSubscriptions()
+   .First(sub => sub.DisplayName == subscriptionName)
+   .SubscriptionID;
+```
+
+```elixir
+alias Microsoft.Azure.Management.Subscription.Api.Subscriptions, as: SubscriptionMgmt
+
+subscription_name = IO.gets("Subscription Name") |> String.trim()
+
+{:ok, %{value: subscriptions}} =
+  conn
+  |> SubscriptionMgmt.subscriptions_list("2016-06-01")
+
+subscription_id =
+  subscriptions
+  |> Enum.filter(&(&1 |> Map.get(:displayName) == subscription_name))
+  |> hd
+  |> Map.get(:subscriptionId)
+```
+
+```elixir
+alias Microsoft.Azure.Management.Storage.Api.StorageAccounts, as: StorageMgmt
+
+{:ok, %{value: accounts}} =
+  conn
+  |> StorageMgmt.storage_accounts_list("2018-02-01", subscription_id)
+
+accounts
+```
+
+```elixir
+accounts
+|> Enum.map(&(&1 |> Map.get(:name)))
+```
+
+## Storage access
+
+### Starting a device authentication flow with Azure AD
+
+This starts an Erlang process (an 'actor'), which handles the communication with Azure AD. The `#PID<xxx.yyy.zzz>` stuff you see is the Erlang process ID.
+
+```elixir
+{:ok, storage_pid} =
+  %State{
+    resource: "https://storage.azure.com/",
+    tenant_id: "chgeuerfte.onmicrosoft.com",
+    azure_environment: :azure_global
+  }
+  |> DeviceAuthenticatorSupervisor.start_link()
+```
+
+And give us the device code with which we need to authenticate to AAD ([microsoft.com/devicelogin](https://microsoft.com/devicelogin))
+
+```elixir
+{:ok, %{user_code: storage_usercode}} =
+  storage_pid
+  |> DeviceAuthenticator.get_device_code()
+
+storage_usercode
+```
+
+```elixir
+{:ok, %{access_token: storage_token}} =
+  storage_pid
+  |> DeviceAuthenticator.get_token()
+
+storage_token
+|> JOSE.JWT.peek()
+|> Map.get(:fields)
+|> Enum.map(fn {k, v} ->
+  "#{k |> String.pad_trailing(12, " ")}: #{inspect(v)}"
+end)
+|> Enum.join("\n")
+|> IO.puts()
+
+"https://jwt.ms/#access_token=#{storage_token}"
+```
+
+### Now let's talk to Azure Blob Storage
+
+We're now using an input cell in this LiveBook to allow the user to specify the storage account name.
+
+The `aad_token_provider` is a lambda function which, on each call, asks the process which keeps our storage token fresh, for the current access token.
+
+```elixir
+accounts
+|> Enum.map(&(&1 |> Map.get(:name)))
+|> IO.inspect(label: "Available storage accounts")
+
+:ok
+```
+
+```elixir
+storage_account_name = IO.gets("Storage Account Name") |> String.trim()
+
+IO.puts("We'll be using storage account '#{storage_account_name}'")
+
+aad_token_provider = fn _resource ->
+  storage_pid
+  |> DeviceAuthenticator.get_token()
+  |> elem(1)
+  |> Map.get(:access_token)
+end
+
+storage = %Storage{
+  account_name: storage_account_name,
+  cloud_environment_suffix: "core.windows.net",
+  aad_token_provider: aad_token_provider
+}
+```
+
+### Set HTTP proxy
+
+Given we're running in a Docker container on WSL2, we could still ask the SDK to funnel all outgoing calls through Fiddler on the Windows side.
+
+```elixir
+# System.put_env("http_proxy", "192.168.1.10:8888")
+
+# System.delete_env("http_proxy")
+```
+
+### List storage containers
+
+```elixir
+{:ok, %{containers: containers}} =
+  storage
+  |> Container.list_containers()
+
+containers
+|> Enum.map(& &1.name)
+```
+
+### Create a new storage container
+
+```elixir
+container_name = IO.gets("Container Name") |> String.trim()
+
+storage
+|> Container.new(container_name)
+|> Container.create_container()
+```
+
+```elixir
+storage
+|> Container.new(container_name)
+|> Container.list_blobs()
+```
+
+```elixir
+storage
+|> Container.new(container_name)
+|> Blob.upload_file("/data/TheseGoToEleven.mp4")
+```
+
+```elixir
+{:ok, %{blobs: blobs}} =
+  storage
+  |> Container.new(container_name)
+  |> Container.list_blobs()
+
+blobs
+|> Enum.map(&(&1 |> Map.get(:name)))
+|> Enum.join("\n")
+|> IO.puts()
+```
+
+### Who's using it already?
+
+* Talk about prod customers of the SDKs
+* SDKs
+  * https://github.com/chgeuer/ex_microsoft_azure_utils
+  * https://github.com/chgeuer/ex_microsoft_azure_storage
+  * https://github.com/chgeuer/ex_microsoft_azure_management_generator
+  * https://github.com/chgeuer/ex_microsoft_azure_management
+
+---
+
+## Damn Meeting Minutes
+
+> How FastTrack job forced me rewire my brain - A geek-out session on Keyboards
+
+#### How I felt in meetings
+
+<img src="https://typora.blob.core.windows.net/typoraimages/2021/10/04/15/37/hunt-and-peck----ZKTMFVVBM12E5A0QKND7DP93V4.jpg" alt="hunt-and-peck" style="zoom: 67%;" />
+
+![hunt-and-peck](https://typora.blob.core.windows.net/typoraimages/2021/10/04/15/37/hunt-and-peck----9B64AN7PF7SYSP3MMVZ7CR2RZG.gif)
+
+#### What I wanted to feel
+
+<img src="https://typora.blob.core.windows.net/typoraimages/2021/10/04/15/38/j7hopjV----756JC3WZ0E1EFZ90VDSR7VX870.gif" alt="Alien typing very fast" style="zoom:150%;" />
+
+#### Touch typing
+
+![touch typing](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/42/touchtyping----43965SRRDJT0HWADGMJBKXGZVC.png)
+
+#### Diving into the rabbit hole - Layouts
+
+* QWERTY / QWERTZ - My brain accumulated 34 years of bad habits on this
+* [Dvorak](https://en.wikipedia.org/wiki/Dvorak_keyboard_layout) - from 1936. Didn't feel fancy
+* [Workman](https://workmanlayout.org/) - *"... in honor of all who type on keyboards for a living"*
+* [Colemak Mod-DH](https://colemakmods.github.io/mod-dh/keyboards.html)
+* All have Windows Keyboard drivers...
+
+![usage-viz-grid2](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/58/usage-viz-grid2----07EY79A94KDF7D3JFSRCK2A8GW.png)
+
+#### How many kilometers do your fingers travel?
+
+![Huckleberry finn](https://github.com/kdeloach/workman/raw/gh-pages/images/huck-finn1.png)
+
+#### Learning pages
+
+* [Colemak.Academy](https://colemak.academy/) - Learn your new layout slowly
+* [keybr.com](https://www.keybr.com/) - Grill your weaknesses
+  * sign-in just with a magic link like [`https://www.keybr.com/login/yIkX1rpIDZ`](https://www.keybr.com/login/yIkX1rpIDZ)
+* [Monkeytype.com](https://monkeytype.com/) - More interesting texts, love the "Quote" mode
+
+#### Competitive Learning pages
+
+* [10FastFingers.com](https://10fastfingers.com/)
+* [NitroType.com](https://www.nitrotype.com/race)
+* [TypeRacer.com](https://play.typeracer.com/)
+* Let's play together
+
+#### Keyboard forms
+
+* [Moonlander](https://configure.zsa.io/moonlander/layouts/XW33o/latest/0), [Plank](https://configure.zsa.io/planck-ez/layouts/XWllx/latest/0), [Technik](https://github.com/chgeuer/my_qmk_keymaps/blob/main/chgeuer_keyboards/boardsource__technik_o/keymap.c) or [Corne](https://github.com/chgeuer/my_qmk_keymaps/blob/main/chgeuer_keyboards/crkbd__rev1/keymap.c)
+* Train... [Oryx: The ZSA Keyboard Configurator](https://configure.zsa.io/train)
+
+![A couple or ortho-linear keyboards](https://typora.blob.core.windows.net/typoraimages/2021/10/05/09/37/2021-10-05--11-26-37----Y8VYE3Y03B7XWPD0D3QMYSYC54.png)
+
+#### Keyboard configuration
+
+Keyboard appears 'regular' on Windows/Linux/Mac/Android
+
+* Train... [Oryx: The ZSA Keyboard Configurator](https://configure.zsa.io/train)
+
+##### Graphical editor
+
+![image-20211005090744552](https://typora.blob.core.windows.net/typoraimages/2021/10/05/07/07/image-20211005090744552----YB93G89T36REN4BG9X7SYDM8VG.png)
+
+##### C code (QMK firmware)
+
+![image-20211005090705281](https://typora.blob.core.windows.net/typoraimages/2021/10/05/07/07/image-20211005090705281----W802AFXHQZX5RTQE99BJQK4H0R.png)
+
+#### FEB-15 - Roughly 1 month in
+
+![2021-02-11--23-54-32](https://typora.blob.core.windows.net/typoraimages/2021/10/04/18/08/2021-02-11--23-54-32----ZG2ES857TVYVVF796EQVA8DG2M.png)
+
+![2021-04-21--22-00-39](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/18/2021-04-21--22-00-39----5HQJ2NAD9ZDJJPA192YGGSJWAG.png)
+
+#### July 17 - The 2nd 'great' reset (Forget "Workman" / Learn "Colemak Mod-DHm")
+
+... because some [random guy from the YouTube academy told me so](https://www.youtube.com/watch?v=WVmJrZF9xwk) ...
+
+![2021-08-24--13-02-36](https://typora.blob.core.windows.net/typoraimages/2021/10/04/18/12/2021-08-24--13-02-36----VP88V15WX4SE3DDHGK7Z6J6ZJG.png)
+
+#### Youtube Videos
+
+* This catched me: [How I Type REALLY Fast (156 Words per Minute)](https://www.youtube.com/watch?v=1ArVtCQqQRE)
+* [NoThisIsJohn Channel](https://www.youtube.com/c/NoThisIsJohn) - Really crazy speed typing
+* [Ben Vallack Channel](https://www.youtube.com/channel/UC4NNPgQ9sOkBjw6GlkgCylg)
+* [Learning a new Keyboard Layout - Colemak DH](https://www.youtube.com/watch?v=_Y0MT-QR7xg)
+* [Keyboard Layouts - Things to consider before switching ](https://www.youtube.com/watch?v=rhdMVXlnQIM)
+
+#### Excluded from this presentation - Silicone forms and epoxy resin
+
+![PXL_20210328_162819303](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/45/PXL_20210328_162819303----6HYQ4GJQ2V6J5WG4RQG7BQAS1C.jpg)
+
+![EwIvh0DXcAY84w3](https://typora.blob.core.windows.net/typoraimages/2021/10/04/21/04/EwIvh0DXcAY84w3----2GX4VJJGQVJCTS4CKBA7TC5FDW.jpeg)
+
+![PXL_20210329_181205150](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/45/PXL_20210329_181205150----AD0WFBSPMYK41SWADMWW8BND2G.jpg)
+
+#### Silencing your keyboard
+
+* Buying silent (non-clickey)
+* Lubing the keys (Crytox ...)
+* [O-Rings](https://switchandclick.com/the-best-o-rings-for-silencing-your-mechanical-keyboard/)
+
+#### The road ahead? Maybe next time
+
+* [Plover](http://www.openstenoproject.org/) and Stenography
+* [Mirabai Knight Channel](https://www.youtube.com/c/MirabaiKnight)
+
+![image-20211004224630033](https://typora.blob.core.windows.net/typoraimages/2021/10/04/20/46/image-20211004224630033----2SD8RP48B67AZ63Z0CF6T191BG.png)
+
+#### News
+
+* [Keyboard Builders' Digest (kbd.news)](https://kbd.news/)
