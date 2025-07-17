@@ -10,8 +10,23 @@ Mix.install([
 ])
 ```
 
-## Section
+## The Data
 
 ```elixir
-
+{images, labels} = Scidata.MNIST.download()
 ```
+
+```elixir
+# create a tensor
+images_tensor = 
+  {images_data, image_type, images_shape} = images
+  images_data
+  |> Nx.from_binary(image_type)
+  |> Nx.reshape(images_shape)
+  |> Nx.divide(255)
+  |> Nx.reshape({60_000, :auto})
+```
+
+References:
+
+* [Train a Neural Network in Minutes with Elixir & Axon](https://www.youtube.com/watch?v=Xk1WPGKaDBg)

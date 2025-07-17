@@ -18,7 +18,7 @@ run_app:
 # after erlang and elixir is installed, just run: 
 # mix escript.install hex livebook
 run_livebook:
-	export LIVEBOOK_HOME=~/code && ~/.asdf/installs/elixir/1.18.4-otp-27/.mix/escripts/livebook server
+	export LIVEBOOK_HOME=~/code/elixir_programming/hello/documents/livebook && ~/.asdf/installs/elixir/1.18.4-otp-27/.mix/escripts/livebook server
 
 # For cleanup running dockers 
 cleanup_pods:
