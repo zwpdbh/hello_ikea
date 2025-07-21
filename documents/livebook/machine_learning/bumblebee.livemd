@@ -10,7 +10,7 @@ Mix.install(
 )
 ```
 
-## Section
+## Use smart cell to setup
 
 <!-- livebook:{"attrs":"e30","chunks":[[0,290],[292,691]],"kind":"Elixir.KinoBumblebee.TaskCell","livebook_object":"smart_cell"} -->
 
@@ -49,10 +49,6 @@ Kino.listen(form, fn %{data: %{image: image}} ->
 end)
 
 Kino.Layout.grid([form, frame], boxed: true, gap: 16)
-```
-
-```elixir
-
 ```
 
 References:
