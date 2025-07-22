@@ -15,10 +15,47 @@ Mix.install(
 * [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
 * [A RAG for Elixir in Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
 * [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+* [How to use Jina embeddings in Elixir with Bumblebee](https://bitcrowd.dev/how-to-run-jina-embeddings-in-elixir/)
+* [Notes on semantic search with Elixir and Bumblebee](https://dev.to/ndrean/an-example-of-semantic-search-with-elixir-and-bumblebee-h9n)
+* [Bumblebee -- LLMs and RAG](https://hexdocs.pm/bumblebee/llms_rag.html)
+* [Elixir Machine Learning: Clustering, Bumblebee, and Structured Prompting](https://dockyard.com/blog/2024/03/05/elixir-machine-learning-clustering-bumblebee-structured-prompting)
+* [Generate embeddings with nomic-embed-text-v1 using Elixir Bumblebee](https://natetodd.com/blog/generate-embeddings-with-nomic-embed-text-v1-using-elixir-bumblebee)
+
+## General Steps
+
+* Document Ingestion (Input)
+* Chunking
+* Embedding & Vector Database
+* Generation & Output
 
 ## Models I need from Huggingface
 
 ```elixir
 {:ok, model} = 
   Bumblebee.load_model({:hf, "sentence-transformers/all-MiniLM-L6-v2"})
+```
+
+```elixir
+{:ok, model_info} = Bumblebee.load_model({:hf, "bert-base-uncased"}, architecture: :base)
+{:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "bert-base-uncased"})
+
+text = "Hello, world!"
+inputs = Bumblebee.apply_tokenizer(tokenizer, text)
+
+Axon.predict(model_info.model, model_info.params, inputs).hidden_state[0]
+```
+
+```elixir
+repo = {:hf, "jinaai/jina-embeddings-v2-base-en"}
+
+{:ok, model_info} = Bumblebee.load_model(repo, architecture: :base)
+{:ok, tokenizer} = Bumblebee.load_tokenizer(repo)
+
+serving =
+  Bumblebee.Text.TextEmbedding.text_embedding(model_info, tokenizer,
+    compile: [batch_size: 64, sequence_length: 512],
+    defn_options: [compiler: EXLA],
+    output_attribute: :hidden_state,
+    output_pool: :mean_pooling
+  )
 ```
