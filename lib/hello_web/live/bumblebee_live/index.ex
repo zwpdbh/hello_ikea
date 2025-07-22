@@ -37,4 +37,42 @@ defmodule HelloWeb.BumblebeeLive.Index do
     </Layouts.app>
     """
   end
+
+  @impl true
+  def handle_event("predict", params, socket) do
+    case params["text"] do
+      "" ->
+        {:noreply,
+         socket
+         |> assign(:text, nil)
+         |> assign(:task, nil)
+         |> assign(:result, nil)}
+
+      text ->
+        task =
+          Task.async(fn ->
+            Process.sleep(300)
+            "todo:joy"
+          end)
+
+        {:noreply,
+         socket
+         |> assign(:text, text)
+         |> assign(:task, task)
+         |> assign(:result, nil)}
+    end
+  end
+
+  @impl true
+  def handle_info({ref, predict_result}, socket) when ref == socket.assigns.task.ref do
+    {:noreply,
+     socket
+     |> assign(:result, predict_result)
+     |> assign(:task, nil)}
+  end
+
+  @impl true
+  def handle_info(_, socket) do
+    {:noreply, socket}
+  end
 end
