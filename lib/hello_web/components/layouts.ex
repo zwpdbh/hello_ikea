@@ -46,6 +46,11 @@ defmodule HelloWeb.Layouts do
             </.link>
           </li>
           <li>
+            <.link navigate={~p"/bumblebee"} class="font-semibold text-gray-700 hover:text-gray-900">
+              bumblebee
+            </.link>
+          </li>
+          <li>
             <.user_info current_user={@current_user} socket={@socket} />
           </li>
         </ul>

@@ -38,6 +38,7 @@ defmodule HelloWeb.Router do
 
       live "/", HomeLive
       live "/chats", ChatLive.Index, :index
+      live "/bumblebee", BumblebeeLive.Index, :index
     end
   end
 
