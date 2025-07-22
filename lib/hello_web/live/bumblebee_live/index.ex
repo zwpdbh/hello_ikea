@@ -51,8 +51,7 @@ defmodule HelloWeb.BumblebeeLive.Index do
       text ->
         task =
           Task.async(fn ->
-            Process.sleep(300)
-            "todo:joy"
+            Nx.Serving.batched_run(MyNxServing, text)
           end)
 
         {:noreply,
@@ -64,7 +63,16 @@ defmodule HelloWeb.BumblebeeLive.Index do
   end
 
   @impl true
-  def handle_info({ref, predict_result}, socket) when ref == socket.assigns.task.ref do
+  def handle_info(
+        {ref,
+         %{
+           predictions: [first_prediction | _]
+         }},
+        socket
+      )
+      when ref == socket.assigns.task.ref do
+    %{label: predict_result, score: _score} = first_prediction
+
     {:noreply,
      socket
      |> assign(:result, predict_result)

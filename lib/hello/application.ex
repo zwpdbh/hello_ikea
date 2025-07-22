@@ -22,7 +22,8 @@ defmodule Hello.Application do
       # Start to serve requests, typically the last entry
       HelloWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :hello]},
-      Hello.LLM.Config
+      Hello.LLM.Config,
+      {Nx.Serving, serving: serving(), name: MyNxServing}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -37,5 +38,17 @@ defmodule Hello.Application do
   def config_change(changed, _new, removed) do
     HelloWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  def serving do
+    {:ok, model_info} =
+      Bumblebee.load_model({:hf, "finiteautomata/bertweet-base-emotion-analysis"})
+
+    {:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "vinai/bertweet-base"})
+
+    Bumblebee.Text.text_classification(model_info, tokenizer,
+      compile: [batch_size: 10, sequence_length: 100],
+      defn_options: [compiler: EXLA]
+    )
   end
 end
