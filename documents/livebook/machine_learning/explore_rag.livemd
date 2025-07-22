@@ -1,0 +1,24 @@
+# Explore RAG
+
+```elixir
+Mix.install(
+  [
+    {:bumblebee, "~> 0.6.3"},
+    {:exla, ">= 0.0.0"}
+  ],
+  config: [nx: [default_backend: EXLA.Backend]]
+)
+```
+
+## References
+
+* [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
+* [A RAG for Elixir in Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
+* [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+
+## Models I need from Huggingface
+
+```elixir
+{:ok, model} = 
+  Bumblebee.load_model({:hf, "sentence-transformers/all-MiniLM-L6-v2"})
+```
