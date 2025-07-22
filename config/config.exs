@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :nx, default_backend: EXLA.Backend
+
 config :ash_oban, pro?: false
 
 config :hello, Oban,

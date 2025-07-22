@@ -1,0 +1,173 @@
+# Postgrex on Azure - Connecting to Azure PostgreSQL from Elixir
+
+```elixir
+Mix.install(
+  [
+    {:postgrex, "~> 0.19.3"},
+    {:req, "~> 0.5.7"},
+    {:livebook_env, "~> 1.0"}
+  ]
+)
+
+LivebookEnv.import_dotenv("/data/documents/livebook/.env")
+```
+
+## Certificate pinning
+
+```elixir
+# https://cookbook.geuer-pollmann.de/azure/postgrex-on-azure
+defmodule MicrosoftCerts do
+  defmodule CompileHelpers do
+    defp http_get(url) do
+      %Req.Response{status: 200, body: body} = Req.get!(url: url)
+      body
+    end
+
+    defp to_pem(cert) when is_binary(cert) do
+      cert
+      |> Base.encode64()
+      |> String.replace(~r/.{64}/, "\\0\n")
+      |> then(&"-----BEGIN CERTIFICATE-----\n#{&1}\n-----END CERTIFICATE-----\n\n")
+    end
+
+    @doc """
+    Downloads and processes root CA certificates for certificate pinning.
+
+    Returns a list of unique DER-encoded certificates.
+    """
+    @spec download_certs_for_pinning() :: [binary()]
+    def download_certs_for_pinning() do
+      # List of root CA certificate URLs from Microsoft documentation
+      # https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-networking-ssl-tls
+      certificate_urls = """
+      https://www.microsoft.com/pkiops/certs/microsoft%20azure%20rsa%20tls%20issuing%20ca%2004%20-%20xsign.crt
+      https://www.microsoft.com/pkiops/certs/Microsoft%20RSA%20Root%20Certificate%20Authority%202017.crt
+      https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
+      https://dl.cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
+      https://cacerts.digicert.com/DigiCertGlobalRootCA.crt
+      """
+
+      # Step 1: Split URLs into individual strings
+      certificate_urls
+      |> String.split(["\n"], trim: true)
+      # Step 2: Download each certificate
+      |> Enum.map(&download_certificate/1)
+      # Step 3: Convert certificates to PEM format if needed
+      |> Enum.map(&convert_to_pem/1)
+      # Step 4: Combine all PEM certificates into single string
+      |> Enum.join("\n\n")
+      # Step 5: Decode PEM certificates
+      |> :public_key.pem_decode()
+      # Step 6: Extract DER-encoded certificates
+      |> Enum.map(&extract_der_certificate/1)
+      # Step 7: Remove duplicates
+      |> Enum.uniq()
+    end
+
+    # Downloads a certificate from the given URL
+    @spec download_certificate(String.t()) :: {String.t(), String.t()}
+    defp download_certificate(url), do: {url, http_get(url)}
+
+    # Converts certificate data to PEM format based on URL extension
+    @spec convert_to_pem({String.t(), String.t()}) :: String.t()
+    defp convert_to_pem({url, data}) do
+      cond do
+        String.ends_with?(url, ".pem") -> data
+        String.ends_with?(url, ".crt") -> to_pem(data)
+      end
+    end
+
+    # Extracts DER-encoded certificate from PEM entry
+    @spec extract_der_certificate({:Certificate, binary(), :not_encrypted}) :: binary()
+    defp extract_der_certificate({:Certificate, der, :not_encrypted}), do: der
+
+    @doc """
+    Saves downloaded certificates to a file in the priv/certs directory.
+
+    Returns :ok on success or {:error, reason} on failure.
+    """
+    @spec save_certs_to_file() :: :ok | {:error, term()}
+    def save_certs_to_file() do
+      try do
+        certs = download_certs_for_pinning()
+
+        {valid_certs, invalid_certs} =
+          certs
+          |> Enum.map(fn cert ->
+            case :public_key.pem_entry_encode(:Certificate, cert) do
+              {:error, reason} ->
+                {:invalid, cert, reason}
+
+              encoded ->
+                {:valid, encoded}
+            end
+          end)
+          |> Enum.split_with(fn {status, _} -> status == :valid end)
+
+        # Log invalid certificates
+        if length(invalid_certs) > 0 do
+          IO.puts("Warning: Skipped #{length(invalid_certs)} invalid certificates")
+
+          Enum.each(invalid_certs, fn {:invalid, cert, reason} ->
+            IO.puts("Invalid certificate: #{inspect(cert, limit: 50)}")
+            IO.puts("Reason: #{inspect(reason)}")
+          end)
+        end
+
+        # Only proceed with valid certificates
+        valid_pem_certs = Enum.map(valid_certs, fn {:valid, cert} -> cert end)
+
+        File.mkdir_p!("priv/certs")
+        File.write!("priv/certs/azure_root_certs.pem", :public_key.pem_encode(valid_pem_certs))
+      rescue
+        e in RuntimeError ->
+          {:error, e.message}
+
+        e in MatchError ->
+          {:error, "Certificate encoding failed: #{inspect(e)}"}
+
+        e ->
+          {:error, "Unexpected error: #{inspect(e)}"}
+      end
+    end
+  end
+
+  def ssl_opts(hostname) do
+    [
+      protocol: :tls,
+      protocol_version: :"tlsv1.3",
+      verify: :verify_peer,
+      cacerts: CompileHelpers.download_certs_for_pinning(),
+      server_name_indication: String.to_charlist(hostname),
+      depth: 3
+    ]
+  end
+end
+
+```
+
+Test to connect PostgreSQL
+
+```elixir
+db_host = "acstortestdb" <> ".postgres.database.azure.com"
+
+{:ok, conn} = Postgrex.start_link(
+  hostname: db_host,
+  port: 5432, 
+  database: "acstortestpreview",
+  ssl: MicrosoftCerts.ssl_opts(db_host),  
+  # The username here is the friendly name of our app...
+  username: System.get_env("USERNAME"),
+  password: System.get_env("PASSWORD")
+)
+```
+
+```elixir
+query = 
+  """
+  SELECT * FROM pg_stat_activity;
+  """
+
+# Execute the create table query
+Postgrex.query!(conn, query, [])
+```

@@ -1,0 +1,38 @@
+# Distributed Elixir with Livebook
+
+## Make your own connections!
+
+Let's start by seeing where we're at and what's set.
+
+```elixir
+# Shows the node name for this current livebook notebook
+IO.inspect(node())
+# Shows the randomly generated cookie for this node
+IO.inspect(Node.get_cookie())
+# Shows the global name registry which empty since it's not part of a node cluster
+IO.inspect(:global.registered_names())
+
+# Shows a list of the node names (with the erlang port) on your machine (Erlang Port Mapper Daemon). This should include this node as well as the "something" node, "mastery" node, and any other "my_project" node you started.
+IO.inspect(:erl_epmd.names())
+# Shows the current working directory for the livebook application
+IO.inspect(File.cwd!())
+# Shows all of the environment variables available when the livebook application was started.
+System.get_env()
+```
+
+As shown above, this notebook is now running in its own node with the environment scoped the same as the livebook application that spawned it.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Now, let's connect to one of our other nodes. First we need to change the cookie of our current node to match those of the other nodes.
+
+```elixir
+Node.set_cookie(:some_token)
+IO.inspect(Node.get_cookie())
+```
+
+Now, let's connect to one of our other nodes. First we need to change the cookie of our current node to match those of the other nodes.
+
+```elixir
+Node.connect(:"hello@127.0.0.1")
+```

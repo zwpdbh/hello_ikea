@@ -1,0 +1,93 @@
+# 02 Use GenStage to handle AKS cluster pool
+
+```elixir
+Mix.install([:gen_stage, :jason, :kino, :oban, :postgrex])
+```
+
+## Prerequisite -- setup Oban
+
+We will use Oban worker to create AKS cluster. So, first let's setup Oban.
+First, setup repo migration
+
+```elixir
+# 1. Define a postgres repo
+
+Application.put_env(:myapp, MyApp.Repo, 
+  url: "postgres://postgres:postgres@acstor_phoenix_postgres:5432/acstor_phoenix"
+)
+
+defmodule MyApp.Repo do
+  use Ecto.Repo, 
+    adapter: Ecto.Adapters.Postgres, 
+    otp_app: :myapp
+end
+```
+
+```elixir
+# 2. Setup Oban with migration
+defmodule MyApp.Repo.Migrations.AddOban do
+  use Ecto.Migration
+
+  # Your turn...
+  def up do
+    Oban.Migration.up(version: 11)
+  end
+
+  # We specify `version: 1` in `down`, ensuring that we'll roll all the way back down if
+  # necessary, regardless of which version we've migrated `up` to.
+  def down do
+    Oban.Migration.down(version: 1)
+  end
+end
+```
+
+```elixir
+# 3. Without the convenience of running mix ecto.migrate, 
+# we'll handle creating the database and running migrations manually.
+alias MyApp.Repo
+
+Repo.__adapter__().storage_down(Repo.config())
+Repo.__adapter__().storage_up(Repo.config())
+
+MyApp.Repo.start_link()
+
+Ecto.Migrator.run(Repo, [{0, MyApp.Repo.Migrations.AddOban}], :up, all: true)
+```
+
+Configure Oban
+
+```elixir
+# start an Oban instance with the absolute minimum configuration, 
+# the repo and a single default queue.
+start_opts = [repo: MyApp.Repo, queues: [default: 10]]
+
+case Oban.start_link(start_opts) do
+  {:ok, pid} ->
+    pid
+
+  {:error, {:already_started, pid}} ->
+    pid
+end
+```
+
+```elixir
+# Oban instance is running and some config was found.
+Oban.config()
+```
+
+```elixir
+# verify that the default queue you configured is alive
+Oban.check_queue(queue: :default)
+```
+
+## ClusterManager
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph LR
+    A[Scenario Tests] -->|Demand| B[ClusterManager]
+    B -->|Create Requests| C[CreateAksClusterWorker]
+    C -->|New Clusters| B
+    B -->|Allocations| A
+```

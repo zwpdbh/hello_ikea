@@ -1,0 +1,332 @@
+# Distributed Elixir with Livebook
+
+## Livebook, Elixir's version of Jupyter notebook
+
+[Livebook](https://github.com/elixir-nx/livebook) recently dropped and I was curious to see what the hype was all about. I had dabbled with ipython notebook (Jupyter) long ago, so I was curious to see what an Elixir version would offer.
+
+Some Googling will tell you that the primary improvements offered by Livebook over Jupyter are:
+
+* Live collaboration on a notebook (think Google docs), although this is possible for Jupyter using tools like [CoCalc](https://cocalc.com/) and [Google Colab](https://colab.research.google.com/notebooks/intro.ipynb#)
+* Saved files are readable (just markdown)
+* Indication if a cell is stale
+
+Great, but I was more curious about how notebooks could be connected and the ability to build node clusters using a notebook connected to other running applications.
+
+After some playing around, I discovered the following....
+
+### Livebook's Runtime Settings
+
+Livebook offers 3 ways of running Elixir in your notebook
+
+1. Elixir standalone—basically like running `iex` in the termninal
+2. Mix standalone—like running `iex -S mix` in the terminal
+3. Attached node—Ooh... this one's interesting; you can connect to an existing distributed node. This is like providing the `--remsh` flag when starting an `iex` session or connecting to a remote shell from inside an `iex` session using the `User command switch` prompts (available by hitting Ctrl+g; enter h or ? for help).
+
+## Make your own connections!
+
+To experiment with node connections, follow these steps:
+
+1. Start elixir node(s)
+   * Open another terminal shell and run `TEST_ENV_VAR=TESTING iex --sname something --cookie SOMECOOKIE`
+   * You can setup the Mastery project that I was building while stepping through [this great book](https://pragprog.com/titles/jgotp/designing-elixir-systems-with-otp/)
+     * `git clone https://github.com/Stamates/mastery.git` to copy the project
+     * `cd mastery && git checkout 7956859 && mix deps.get` checkout specific commit (prior to introducing database persistence)and load dependencies
+     * `iex --sname mastery --cookie MASTERYCOOKIE -S mix` to startup the application node in an `iex` session
+   * If you have another Elixir project to run, open a terminal shell in the project's root directory and run `iex --sname my_project --cookie SOMECOOKIE -S mix`
+2. Download this blog post file [here](https://gist.github.com/Stamates/eea8add4d8c2ada71e1221898e120591)
+3. Startup a local Livebook notebook in another terminal (use the same directory that you cloned the Mastery project into)
+   * Follow the instructions to get [Livebook](https://github.com/elixir-nx/livebook) set up and running on your local machine.
+   * If you running in production mode, copy and past the `localhost:8080` link that includes the token into your browser.
+   * Open this blog post file (navigate to where you stored the `livebook_blog.livemd` file, click it and click "Open)
+
+**Note:** To connect to a distributed node, both nodes need to have the same `--cookie` and use the same node naming convention (`--sname`—a short name which takes the form `<name>@<your computer name>` OR `--name`—a long name that takes a fully qualified `name@ip` address). Livebook works with `--sname` as the default, so you won't be able to connect to `--name` nodes.
+
+### Standalone elixir runtime testing
+
+We'll start with testing the standalone elixir runtime which you can either set up by clicking the "Runtime settings" icon (or type "sr") and clicking "Connect" OR just running Evaluate on the cell(s) below (by clicking the play button or typing "ea" or hitting Shift+Cmd in one of the Elixir cells). There are docs on the starting page of the Livebook app as well as a keyboard shortcut menu to help you learn to navigate Livebook.
+
+Let's start by seeing where we're at and what's set.
+
+```elixir
+# Shows the node name for this current livebook notebook
+IO.inspect(node())
+# Shows the randomly generated cookie for this node
+IO.inspect(Node.get_cookie())
+# Shows the global name registry which empty since it's not part of a node cluster
+IO.inspect(:global.registered_names())
+
+# Shows a list of the node names (with the erlang port) on your machine (Erlang Port Mapper Daemon). This should include this node as well as the "something" node, "mastery" node, and any other "my_project" node you started.
+IO.inspect(:erl_epmd.names())
+# Shows the current working directory for the livebook application
+IO.inspect(File.cwd!())
+# Shows all of the environment variables available when the livebook application was started.
+System.get_env()
+```
+
+As shown above, this notebook is now running in its own node with the environment scoped the same as the livebook application that spawned it.
+
+Now, let's connect to one of our other nodes. First we need to change the cookie of our current node to match those of the other nodes.
+
+```elixir
+Node.set_cookie(:SOMECOOKIE)
+IO.inspect(Node.get_cookie())
+```
+
+Now that we have the same cookie as our other local nodes, let's connect to one...
+
+```elixir
+{:ok, host_name} = :inet.gethostname() |> IO.inspect(label: "Host computer name")
+Node.connect(:"something@#{host_name}")
+```
+
+Assuming that the end result of the above cell was `true`, we should be successfully connected to our node.
+
+```elixir
+# Same as Node.list(:visible) showing list of normal node connections, which is empty
+IO.inspect(Node.list())
+
+# Shows a list of connected nodes (includes the livebook application and our something iex node, which are hidden node connections)
+IO.inspect(Node.list(:connected))
+```
+
+So we're connected, but how do we know for sure? Let's test using an `:rpc` (Remote Procedure Call) which calls a function on a connected node.
+
+```elixir
+:rpc.call(:"something@#{host_name}", System, :get_env, [])
+```
+
+You should see the `TEST_ENV_VAR=TESTING` environment variable that was set when starting the "something" node (which doesn't show when running `System.get_env()`)
+
+Awesome! But there's not a lot of interesting things to do when connecting to a basic `iex` node. Let's connect to the "mastery" node.
+
+```elixir
+Node.set_cookie(:MASTERYCOOKIE)
+IO.inspect(Node.get_cookie())
+IO.inspect(Node.connect(:"mastery@#{host_name}"))
+Node.list(:connected)
+```
+
+We had to change the cookie so that we could connect to the "mastery" node, but since we already established the "something" node connection, we can still make calls to that connected node as well as the "mastery" node. Let's test...
+
+```elixir
+# Get TEST_ENV_VAR value from this node's environment (should be nil)
+IO.inspect(System.get_env("TEST_ENV_VAR"))
+# Get TEST_ENV_VAR from "something" node environment (TESTING)
+IO.inspect(:rpc.call(:"something@#{host_name}", System, :get_env, ["TEST_ENV_VAR"]))
+# Get TEST_ENV_VAR from "mastery" node environment (should be nil)
+:rpc.call(:"mastery@#{host_name}", System, :get_env, ["TEST_ENV_VAR"])
+```
+
+While we're at it, in the "something" node terminal, run `Node.get_cookie()` to confirm that the cookie is still `:SOMECOOKIE`. Also check in the "mastery" node terminal that the cookie there is still `:MASTERYCOOKIE`.
+
+Now let's call something interesting from the "mastery" node...
+
+```elixir
+:rpc.call(:"mastery@#{host_name}", Mastery.Examples.Math, :quiz, [])
+```
+
+The result is a quiz from the Mastery application, but the interesting thing is the structure of the data returned. The function we called returns a struct, but what we see is a map with the `__struct__` set to the module. This is because you're making remote calls to another node, and the current "hidden" node has no concept of what these structs are.
+
+Let's set the cookie back so we don't mess up things in the next steps/session (in case you reevaluate everything up above)
+
+```elixir
+Node.set_cookie(:SOMECOOKIE)
+```
+
+If you started a "my_project" node application of your own, you can copy the above steps (or change and re-run) and connect to your "my_project" node. Then you can try some `:rpc` calls using your own modules/functions.
+
+```elixir
+# :rpc.call(:"my_project)@#{host_name}", <Full Module Name>, <function>, [<function args, common separated by arrity>])
+```
+
+Another interesting way to make calls to a connected node is to use `GenServer` calls (more on this later).
+
+### Attached elixir runtime testing
+
+So now we've learned that we can take a standalone notebook, connect it to another node (after matching the cookie), and make remote calls to the connected node (if the connected node is a running application, you can get results from database calls or any 3rd party services).
+
+Now open the runtime connections and "Disconnect" the standalone node. Then click the "Attached node" option and fill in:\
+Name: something\
+Cookie: SOMECOOKIE
+
+```elixir
+# Shows the node name of the connected node someting@<your computer name>
+IO.inspect(node())
+# Shows the connected node's cookie :SOMECOOKIE
+IO.inspect(Node.get_cookie())
+
+# Shows the global name registry which includes this notebook session ID (same as shown in the url above) as well as any other notebook sessions you have open
+current_session = :global.registered_names() |> List.first() |> IO.inspect()
+# Shows the current working directory connected node "something"
+IO.inspect(File.cwd!())
+# Shows the environment of the connected node (including the TEST_ENV_VAR)
+System.get_env()
+```
+
+Cool! Where before, we had a node that still maintained it's own environment with a "hidden" connection to "something", now it's like we're in the same iex of our "something" node.
+
+Let's confirm the connection...
+
+```elixir
+# Shows the livebook application node because we now have a normal connection to it, which is why we could see the notebook session in the global name registry
+IO.inspect(Node.list())
+# Shows the "something" node
+IO.inspect(Node.list(:this))
+```
+
+And now that we have a normal (remote shell) node connection, we can do some more interesting interactions.
+
+```elixir
+require Logger
+Logger.info("Hello world!")
+```
+
+Now look in the "something" node terminal to see our logger message.
+
+Now something even more interesting...
+
+```elixir
+Node.set_cookie(:SOMEFUNNYCOOKIE)
+```
+
+In the "something" node terminal, run `Node.get_cookie()` to confirm that the cookie is now `:SOMEFUNNYCOOKIE`. It truly is a remote shell into the other node, so changing cookies or any other environment settings will change it in the connected node.
+
+Now let's connect to the "mastery" node and call some functions. Open the runtime connections and "Disconnect" the standalone node. Then click the "Attached node" option and fill in:\
+Name: mastery\
+Cookie: MASTERYCOOKIE
+
+```elixir
+Mastery.Examples.Math.quiz()
+```
+
+Since we're in a remote shell of the "mastery" node, we can call modules and functions directly and we get fully qualified structs in response.
+
+Let's try our `:rpc`call from before...
+
+```elixir
+:rpc.call(:"mastery@#{host_name}", Mastery.Examples.Math, :quiz, [])
+```
+
+We get a response, but instead of the map with `__struct__` field, we get a fully qualified struct since our current node has knowledge of the Mastery data structures.
+
+If you have another "my_project" node, you can connect to that and play around.
+
+## Exploring the Livebook node cluster
+
+### Attached node runtime continued...
+
+Assuming you're still in the attached node runtime setup from the previous section, let's explore a little more with the connected notebook sessions.
+
+You'll want to open a new notebook in another tab and you can start putting some test text/code in there to have something to look at. All notebooks started from a running instance of Livebook will be connected and have their session id's registered in the global registry.
+
+Now, back in your attached node notebook, lets see the updated global registered names...
+
+```elixir
+:global.registered_names()
+```
+
+And then you could call functions using the registered name (such as calling a function to get the data from another notebook session)
+
+```elixir
+notebook_session =
+  :global.registered_names()
+  |> Enum.reject(&(&1 == current_session))
+  |> List.last()
+  |> IO.inspect()
+
+GenServer.call({:global, notebook_session}, :get_data)
+```
+
+Or as an `:rpc` call
+
+```elixir
+{:ok, nodes} = :erl_epmd.names() |> IO.inspect()
+
+livebook_app_node =
+  nodes
+  |> Enum.map(&(&1 |> elem(0) |> List.to_string()))
+  |> Enum.filter(&String.starts_with?(&1, "livebook"))
+  |> List.first()
+  |> IO.inspect()
+
+{:ok, host_name} = :inet.gethostname() |> IO.inspect(label: "Host computer name")
+
+:rpc.call(:"#{livebook_app_node}@#{host_name}", Livebook.Session, :get_data, [
+  elem(notebook_session, 1)
+])
+```
+
+But again, since all notebooks are automatically connected, you can go to the new notebook you set up and copy/paste the following to make a call to the livebook app node.
+
+```elixir
+{:ok, host_name} = :inet.gethostname() |> IO.inspect(label: "Host computer name")
+{:ok, nodes} = :erl_epmd.names() |> IO.inspect()
+
+livebook_app_node =
+  nodes
+  |> Enum.map(&(&1 |> elem(0) |> List.to_string()))
+  |> Enum.filter(&String.starts_with?(&1, "livebook"))
+  |> List.first()
+  |> IO.inspect()
+
+:rpc.call(:"#{livebook_app_node}@#{host_name}", Livebook.Utils, :random_short_id, [])
+
+# :rpc.call(:"#{livebook_app_node}@#{host_name}", Livebook.Session, :get_data, ["<paste session ID here>"]) # Get the session ID from the end of the url for a target notebook
+```
+
+## A word of caution on security
+
+### Run any elixir app on a remote box
+
+Livebook seems to have its uses for sharing code snippets and working collaboratively on something, but be careful about opening it up to anyone as it exposes lots of security risks.
+A Livebook notebook session is opening access to whatever server/computer the Livebook application is running on. When running in prod mode (highly recommended) anyone with a valid token authentication can use Elixir functions to inspect the filesystems, environment variables, run other programs, and create remote connections to other servers.
+
+As an example, let's say I have a Livebook application running on my local computer (that I could expose to someone else with `ngrok` or some other service to allow access to my localhost server). Let's also say that I have other Elixir projects on my machine (that aren't currently running). Through Livebook, someone could inspect the local filesystem to find the other Elixir project.
+
+Assuming you setup the Mastery project in earlier steps, let's start with a clean slate.
+
+* Open the runtime connections and "Disconnect" any running node
+* If you're still running the Mastery application, enter `System.halt` in the iex prompt to kill the session
+
+Now let's use this Livebook session to find the Mastery project and compile it so we can have access to the application modules/functions.
+
+```elixir
+# Utility to recursively find all of the .ex files in a project directory that need to be compiled
+defmodule FileExt do
+  def ls_r(path \\ ".") do
+    cond do
+      File.regular?(path) and Path.extname(path) == ".ex" ->
+        [path]
+
+      File.dir?(path) ->
+        File.ls!(path)
+        |> Enum.map(&Path.join(path, &1))
+        |> Enum.map(&ls_r/1)
+        |> Enum.concat()
+
+      true ->
+        []
+    end
+  end
+end
+
+# Explore the file system (most likely a manual method) to determine the path to a project you want to run
+wd = File.cwd!() |> IO.inspect(label: "Current working directory")
+File.ls!("../..")
+base_dir = wd |> Path.split() |> Enum.slice(1..-3) |> Enum.join("/")
+project_path = "/#{base_dir}/mastery/lib/" |> IO.inspect()
+# Or some other approach to navigate and find a directory path to another project
+
+project_files = FileExt.ls_r(project_path) |> IO.inspect()
+Kernel.ParallelCompiler.compile(project_files) |> IO.inspect()
+```
+
+Now that all of the files have been compiled, I can do this...
+
+```elixir
+Mastery.Examples.Math.quiz()
+```
+
+So I was able to compile all of the files for a project that I found on my computer and call functions from that project within this Livebook notebook. While this is only allowing access to the modules/functions, you could compile all the dependencies and introspect config files and/or environment variables to gain access to databases and 3rd party applications.
+
+TL;DR: Don't expose Livebook publically without tokened access and don't have anything on the hosting machine that you wouldn't want someone with tokened access to see/use (as José Valim suggests [here](https://elixirforum.com/t/jose-announces-livebook-a-web-application-for-writing-interactive-and-collaborative-code-notebooks/38932/13))

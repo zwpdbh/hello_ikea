@@ -1,0 +1,36 @@
+<!-- livebook:{"app_settings":{"access_type":"public","auto_shutdown_ms":5000,"multi_session":true,"slug":"my-chat-app"}} -->
+
+# Deploy notebooks as Apps & quality-of-life upgrades - Livebook Launch Week 1 - Day 1
+
+```elixir
+Mix.install([
+  :kino,
+])
+```
+
+## Section
+
+```elixir
+frame = Kino.Frame.new()
+```
+
+```elixir
+inputs = [
+  name: Kino.Input.text("Name"),
+  message: Kino.Input.text("Message")
+]
+
+form = Kino.Control.form(inputs, submit: "Send", reset_on_submit: [:message])
+```
+
+```elixir
+Kino.listen(form, fn %{data: %{name: name, message: message}, origin: origin} ->
+  if name != "" and message != "" do
+    content = Kino.Markdown.new("**#{name}**: #{message}")
+    Kino.Frame.append(frame, content)
+  else
+    content = Kino.Markdown.new("_ERROR! You need a name and message to submit..._")
+    Kino.Frame.append(frame, content, to: origin)
+  end
+end)
+```

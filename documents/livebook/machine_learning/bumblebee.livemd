@@ -1,0 +1,70 @@
+# bumblebee playground
+
+```elixir
+Mix.install(
+  [
+    {:kino_bumblebee, "~> 0.5.0"},
+    {:exla, ">= 0.0.0"}
+  ],
+  config: [nx: [default_backend: EXLA.Backend]]
+)
+```
+
+## Use smart cell to setup
+
+```elixir
+{:ok, model_info} =
+  Bumblebee.load_model({:hf, "finiteautomata/bertweet-base-emotion-analysis"})
+
+{:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "vinai/bertweet-base"})
+
+serving =
+  Bumblebee.Text.text_classification(model_info, tokenizer,
+    compile: [batch_size: 1, sequence_length: 100],
+    defn_options: [compiler: EXLA]
+  )
+```
+
+```elixir
+text_input = Kino.Input.textarea("Text", default: "Oh wow, I didn't know that!")
+form = Kino.Control.form([text: text_input], submit: "Run")
+frame = Kino.Frame.new()
+
+Kino.listen(form, fn %{data: %{text: text}} ->
+  Kino.Frame.render(frame, Kino.Text.new("Running..."))
+  output = Nx.Serving.run(serving, text)
+
+  output.predictions
+  |> Enum.map(&{&1.label, &1.score})
+  |> Kino.Bumblebee.ScoredList.new()
+  |> then(&Kino.Frame.render(frame, &1))
+end)
+
+Kino.Layout.grid([form, frame], boxed: true, gap: 16)
+```
+
+References:
+
+* [Bumblebee: GPT2, Stable Diffusion, and more in Elixir](https://www.youtube.com/watch?v=g3oyh3g1AtQ&t=36s)
+
+* [Livebook & Elixir: Where AI, Web & Concurrency Meet • José Valim • YOW! 2023](https://www.youtube.com/watch?v=pas9WdWIBHs)
+
+* [Lambda World 2024 - Livebook: functional notebooks for AI and Web with Elixir - José Valim](https://www.youtube.com/watch?v=0Pugqt0MQ8g)
+
+* [What's new in LiveBook - José Valim](https://www.youtube.com/watch?v=II0HH2PJr7E)
+
+* [Deploy notebooks as Apps & quality-of-life upgrades - Livebook Launch Week 1 - Day 1](https://www.youtube.com/watch?v=q7T6ue7cw1Q)
+
+* [Distributed² Machine Learning notebooks with Elixir and Livebook - Livebook Launch Week 1 - Day 2](https://www.youtube.com/watch?v=MSMyRBJAoSs)
+
+* [Hubs and Secret Management - Livebook Launch Week 1 - Day 3](https://www.youtube.com/watch?v=IZzPquWl5Yw)
+
+* [Build and deploy a Whisper chat app to Hugging Face in 15 minutes - Launch Week 1 - Day 4](https://www.youtube.com/watch?v=uyVRPEXOqzw)
+
+* [Data wrangling in Elixir with Explorer, the power of Rust, the elegance of R - Launch Week 1 - Day 5](https://www.youtube.com/watch?v=U6nuPjyAUPw&t=3s)
+
+* [A Practical Guide to Machine Learning in Elixir - Chris Grainger](https://www.youtube.com/watch?v=Es08MRtSkoE)
+
+* [Jonatan Kłosko – Q&A about Livebook, Elixir Nx and Bumblebee | Elixir Stream Week](https://www.youtube.com/watch?v=yuZnsuwI8pk)
+
+* [KinoBumblebee](https://github.com/livebook-dev/kino_bumblebee)
