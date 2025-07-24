@@ -9,12 +9,16 @@ defmodule Hello.Documents.Loader do
     |> Enum.reduce([], fn each_file, acc ->
       contents =
         File.stream!(each_file, 8192)
-        |> Stream.map(&String.trim/1)
+        |> Stream.map(fn each ->
+          TextChunker.split(each)
+        end)
         |> Enum.to_list()
+        |> List.flatten()
 
       contents ++ acc
     end)
-    |> Enum.take(2)
+    |> Enum.take(3)
+    |> dbg()
   end
 
   def load_files_from_folder(folder_path) do

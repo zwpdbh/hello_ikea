@@ -76,7 +76,8 @@ defmodule Hello.MixProject do
       {:dotenvy, "~> 1.1.0"},
       {:pgvector, "~> 0.3.0"},
       {:bumblebee, "~> 0.6.0"},
-      {:exla, ">= 0.0.0"}
+      {:exla, ">= 0.0.0"},
+      {:text_chunker, "~> 0.4.0"}
     ]
   end
 
