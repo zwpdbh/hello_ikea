@@ -1,3 +1,5 @@
+# This is from example:
+# Streaming OpenAI in Elixir Phoenix Part III -- https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-3/
 defmodule HelloWeb.ChatLive.Index do
   use HelloWeb, :live_view
 
@@ -119,12 +121,12 @@ defmodule HelloWeb.ChatLive.Index do
 
   defp run_chat_completion(pid, messages) do
     request = %{
-      model: "#{Hello.LLM.Config.get().chat_model}",
+      model: "#{Hello.LLMProvider.Config.get().chat_model}",
       temperature: 1,
       messages: messages
     }
 
-    Hello.LLM.ChatClient.chat(request,
+    Hello.LLMProvider.ChatClient.chat(request,
       stream: fn chunk ->
         case chunk do
           %{"choices" => [%{"delta" => %{"content" => content}}]} ->

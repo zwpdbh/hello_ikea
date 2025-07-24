@@ -34,3 +34,11 @@ defmodule Hello.Rag.Serving do
     )
   end
 end
+
+defmodule Hello.Rag.Serving.Play do
+  def load_bumblebee_model() do
+    repo = {:hf, "jinaai/jina-embeddings-v2-base-code"}
+    {:ok, model_info} = Bumblebee.load_model(repo)
+    :ok
+  end
+end

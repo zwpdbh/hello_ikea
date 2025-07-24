@@ -83,13 +83,13 @@ defmodule Hello.Documents.ArticleBuilder do
   end
 
   defp run_query(messages, response_model) do
-    config = Hello.LLM.Config.get()
+    config = Hello.LLMProvider.Config.get()
 
     {:ok, response} =
       InstructorLite.instruct(
         %{messages: messages, model: config.chat_model},
         response_model: response_model,
-        adapter: Hello.LLM.MyAdapter,
+        adapter: Hello.LLMProvider.MyAdapter,
         adapter_context: [
           api_key: config.api_key,
           url: config.chat_endpoint

@@ -22,7 +22,7 @@ defmodule Hello.Application do
       # Start to serve requests, typically the last entry
       HelloWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :hello]},
-      Hello.LLM.Config,
+      Hello.LLMProvider.Config,
       {Nx.Serving, serving: serving(), name: MyNxServing},
       {Nx.Serving,
        serving: Hello.Rag.Serving.build_embedding_serving(), name: MyEmbeddingServing},

@@ -1,26 +1,26 @@
-defmodule Hello.LLM.ChatClient do
+defmodule Hello.LLMProvider.ChatClient do
   @moduledoc """
   A client module for interacting with an LLM-compatible chat API.
 
   This module allows sending prompts to an LLM endpoint, supporting both standard
   (non-streaming) and streaming responses. It uses the `Req` library to perform HTTP
   requests and expects the configuration (e.g., endpoint, API key, model) to be provided
-  by `Hello.LLM.Config`.
+  by `Hello.LLMProvider.Config`.
 
   ## Examples
 
-      iex> Hello.LLM.ChatClient.chat("What is the capital of France?")
+      iex> Hello.LLMProvider.ChatClient.chat("What is the capital of France?")
       {:ok, ["Paris"]}
 
-      iex> Hello.LLM.ChatClient.chat("tell me a story in 10 words", stream: fn x -> dbg(x) end)
+      iex> Hello.LLMProvider.ChatClient.chat("tell me a story in 10 words", stream: fn x -> dbg(x) end)
       :ok
 
   This module supports both streamed and non-streamed LLM responses.
   """
   require Logger
 
-  def endpoint, do: Hello.LLM.Config.get().chat_endpoint
-  def api_key, do: Hello.LLM.Config.get().api_key
+  def endpoint, do: Hello.LLMProvider.Config.get().chat_endpoint
+  def api_key, do: Hello.LLMProvider.Config.get().api_key
 
   defp headers do
     [
@@ -138,25 +138,25 @@ defmodule Hello.LLM.ChatClient do
   end
 end
 
-# For playing Hello.LLM.ChatClient
-defmodule Hello.LLM.ChatClient.Playground do
+# For playing Hello.LLMProvider.ChatClient
+defmodule Hello.LLMProvider.ChatClient.Playground do
   def chat() do
-    Hello.LLM.ChatClient.chat(%{
+    Hello.LLMProvider.ChatClient.chat(%{
       "messages" => [
         %{"content" => "what is the capital of France?", "role" => "user"}
       ],
-      "model" => "#{Hello.LLM.Config.get().chat_model}",
+      "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
       "temperature" => 1
     })
   end
 
   def chat_stream() do
-    Hello.LLM.ChatClient.chat(
+    Hello.LLMProvider.ChatClient.chat(
       %{
         "messages" => [
           %{"content" => "tell me a story in 10 words", "role" => "user"}
         ],
-        "model" => "#{Hello.LLM.Config.get().chat_model}",
+        "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
         "temperature" => 1
       },
       stream: fn x -> dbg(x) end
@@ -172,7 +172,7 @@ defmodule Hello.LLM.ChatClient.Playground do
     content_type = "content-type: application/json"
     data = ~s({
       "request": {
-        "model": "#{Hello.LLM.Config.get().chat_model}",
+        "model": "#{Hello.LLMProvider.Config.get().chat_model}",
         "temperature": 1,
         "messages": [
           {

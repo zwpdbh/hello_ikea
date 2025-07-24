@@ -1,4 +1,6 @@
-defmodule Hello.LLM.MyAdapter do
+# This is from example:
+# Streaming OpenAI in Elixir Phoenix Part II -- https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-2/
+defmodule Hello.LLMProvider.MyAdapter do
   @moduledoc """
   Adapter for Chat Completions-compatible API endpoints, such as [OpenAI](https://platform.openai.com/docs/api-reference/chat) or [Grok](https://docs.x.ai/docs/api-reference#chat-completions).
 
@@ -181,7 +183,7 @@ defmodule MyAdapterTest do
         "total_tokens" => 183
       }
     }
-    |> Hello.LLM.MyAdapter.parse_response([])
+    |> Hello.LLMProvider.MyAdapter.parse_response([])
   end
 
   def case02() do
@@ -218,6 +220,6 @@ defmodule MyAdapterTest do
         "total_tokens" => 728
       }
     }
-    |> Hello.LLM.MyAdapter.parse_response([])
+    |> Hello.LLMProvider.MyAdapter.parse_response([])
   end
 end

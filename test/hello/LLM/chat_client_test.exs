@@ -1,7 +1,7 @@
-defmodule Hello.LLM.ChatClientTest do
+defmodule Hello.LLMProvider.ChatClientTest do
   use Hello.DataCase
 
-  alias Hello.LLM.ChatClient
+  alias Hello.LLMProvider.ChatClient
 
   test "can parse complete chunks" do
     event_one = %{
