@@ -35,10 +35,11 @@ defmodule Hello.Rag.Serving do
   end
 end
 
+# Example from: How to use Jina embeddings in Elixir with Bumblebee
+# ref: https://bitcrowd.dev/how-to-run-jina-embeddings-in-elixir/
 defmodule Hello.Rag.Serving.Play do
   def load_bumblebee_model() do
-    repo = {:hf, "jinaai/jina-embeddings-v2-base-code"}
-    {:ok, model_info} = Bumblebee.load_model(repo)
-    :ok
+    repo = {:hf, "jinaai/jina-embeddings-v2-base-en"}
+    Bumblebee.load_model(repo)
   end
 end
