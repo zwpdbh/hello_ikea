@@ -256,4 +256,4 @@ end)
 Kino.Layout.grid([form, frame], boxed: true, gap: 16)
 ```
 
-<!-- livebook:{"offset":6872,"stamp":{"token":"XCP.R6CxeViNpzRNLc2BqZdrxw6NypLFf_8Z9Cv9piTsg2ArJr7vxoJtwcxU--danmgkOtnRY3ElK7e8EAmvBP5zVfjTkkeGSDMax5VAJgO1x1GftuEeN2D9F9YL7flx","version":2}} -->
+<!-- livebook:{"offset":6871,"stamp":{"token":"XCP.qtOiB6FWquu_Z4lf5YdG83fO711QeWPKgANRQlq5h0DrqO_FpCVkLjZC3zf482oFpMDfrEcd3XYJR62kXn2T4_eaB-WT2Yu-Ab8LoYpYdNTuuVb2XcAsaiZDQ2Qy","version":2}} -->
