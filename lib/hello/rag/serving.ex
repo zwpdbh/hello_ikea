@@ -1,13 +1,16 @@
 defmodule Hello.Rag.Serving do
   def build_embedding_serving() do
-    repo = {:hf, "jinaai/jina-embeddings-v2-base-code"}
+    # TODO: to use jinaai/jina-embeddings-v2-base-code, we first need to fork bumblebee and implement jina-bert
+    # see: https://bitcrowd.dev/how-to-run-jina-embeddings-in-elixir/
+    # repo = {:hf, "jinaai/jina-embeddings-v2-base-code"}
+    # {:ok, model_info} =
+    #   Bumblebee.load_model(repo,
+    #     spec_overrides: [architecture: :base],
+    #     params_filename: "model.safetensors"
+    #   )
 
-    {:ok, model_info} =
-      Bumblebee.load_model(repo,
-        spec_overrides: [architecture: :base],
-        params_filename: "model.safetensors"
-      )
-
+    repo = {:hf, "thenlper/gte-small"}
+    {:ok, model_info} = Bumblebee.load_model(repo)
     {:ok, tokenizer} = Bumblebee.load_tokenizer(repo)
 
     Bumblebee.Text.TextEmbedding.text_embedding(model_info, tokenizer,
@@ -39,7 +42,7 @@ end
 # ref: https://bitcrowd.dev/how-to-run-jina-embeddings-in-elixir/
 defmodule Hello.Rag.Serving.Play do
   def load_bumblebee_model() do
-    repo = {:hf, "jinaai/jina-embeddings-v2-base-en"}
+    repo = {:hf, "thenlper/gte-small"}
     Bumblebee.load_model(repo)
   end
 end

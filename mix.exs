@@ -75,7 +75,7 @@ defmodule Hello.MixProject do
       {:instructor_lite, path: "~/code/elixir_programming/examples/instructor_lite"},
       {:dotenvy, "~> 1.1.0"},
       {:pgvector, "~> 0.3.0"},
-      {:bumblebee, "~> 0.6.0"},
+      {:bumblebee, path: "~/code/elixir_programming/examples/bumblebee"},
       {:exla, ">= 0.0.0"},
       {:text_chunker, "~> 0.4.0"}
     ]
