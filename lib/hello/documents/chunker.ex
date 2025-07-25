@@ -2,7 +2,7 @@
 # 1. https://bitcrowd.dev/a-rag-for-elixir-in-elixir/#ingestion
 # 2. https://hexdocs.pm/bumblebee/llms_rag.html#generating-embeddings
 
-defmodule Hello.Documents.Embedder do
+defmodule Hello.Documents.Chunker do
   defmodule Chunk do
     defstruct [
       :source,
@@ -43,9 +43,9 @@ defmodule Hello.Documents.Embedder do
   end
 end
 
-defmodule Hello.Documents.Embedder.Play do
+defmodule Hello.Documents.Chunker.Play do
   def load_document_and_generate_embedding() do
     Hello.Documents.Loader.load()
-    |> Hello.Documents.Embedder.chunk_with_metadata()
+    |> Hello.Documents.Chunker.chunk_with_metadata()
   end
 end
