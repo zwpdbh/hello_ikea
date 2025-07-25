@@ -12,7 +12,6 @@ defmodule Hello.Documents.Chunker do
     ]
   end
 
-  @spec chunk_with_metadata([%{source: String.t(), content: String.t()}]) :: any()
   def chunk_with_metadata(documents) do
     documents
     |> Enum.map(&chunk_one_document_with_metadata/1)
