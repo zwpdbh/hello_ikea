@@ -1,4 +1,7 @@
 defmodule Hello.Rag.Section do
+  require Ash.Query
+  require Ash.Resource.Preparation.Builtins
+
   use Ash.Resource,
     domain: Hello.Rag,
     data_layer: AshPostgres.DataLayer
@@ -17,6 +20,14 @@ defmodule Hello.Rag.Section do
   actions do
     create :create do
       accept [:chunk, :metadata, :embedding]
+    end
+
+    read :search_section do
+      argument :query, :ci_string do
+        constraints allow_empty?: false
+      end
+
+      prepare before_action(&Hello.Rag.Embedder.search_embedding/2)
     end
   end
 
