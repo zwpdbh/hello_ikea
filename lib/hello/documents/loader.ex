@@ -2,23 +2,31 @@ defmodule Hello.Documents.Loader do
   require Logger
 
   @documents_path "/home/zw/code/elixir_programming/hello/documents"
+  @file_extensions [".md", ".livemd"]
+  @excluded_pathes ["/_build/", "/deps/"]
 
+  @doc """
+  It load files within a folder recursively for certain files with specific extensions.
+  It also skip files contains certain path.
+  It returns [%{source: file_source, content: file_content}]
+  """
   def load() do
     load_files_from_folder(@documents_path)
-    |> Enum.filter(fn each_file -> file_with_extensions?(each_file, [".md", ".livemd"]) end)
+    |> Enum.filter(fn each_file -> file_with_extensions?(each_file, @file_extensions) end)
     |> Enum.reduce([], fn each_file, acc ->
       contents =
         File.stream!(each_file, 8192)
-        |> Stream.map(fn each ->
-          TextChunker.split(each)
+        |> Stream.map(fn each_file_content ->
+          %{
+            source: each_file,
+            content: String.trim(each_file_content)
+          }
         end)
         |> Enum.to_list()
-        |> List.flatten()
 
       contents ++ acc
     end)
     |> Enum.take(3)
-    |> dbg()
   end
 
   def load_files_from_folder(folder_path) do
@@ -27,6 +35,7 @@ defmodule Hello.Documents.Loader do
         files_or_folders =
           files
           |> Enum.map(fn each_file -> Path.join([folder_path, each_file]) end)
+          |> Enum.filter(fn each_file -> not String.contains?(each_file, @excluded_pathes) end)
           |> Enum.group_by(fn abs_path -> File.dir?(abs_path) end)
 
         case files_or_folders do
