@@ -1,4 +1,4 @@
-defmodule Hello.Documents.Loader do
+defmodule Hello.Rag.Loader do
   require Logger
 
   @documents_path "/home/zw/code/elixir_programming/hello/documents"

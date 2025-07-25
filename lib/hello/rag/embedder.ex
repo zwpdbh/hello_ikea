@@ -1,4 +1,4 @@
-defmodule Hello.Documents.Embedder do
+defmodule Hello.Rag.Embedder do
   def generate_embeddings(chunks) do
     chunk_text_list =
       chunks |> Enum.map(& &1.text)
@@ -11,11 +11,10 @@ defmodule Hello.Documents.Embedder do
   # end
 end
 
-defmodule Hello.Documents.Embedder.Play do
+defmodule Hello.Rag.Embedder.Play do
   def generate_embeddings() do
-    Hello.Documents.Loader.load()
-    |> Hello.Documents.Chunker.chunk_with_metadata()
-    |> Hello.Documents.Embedder.generate_embeddings()
-    |> dbg()
+    Hello.Rag.Loader.load()
+    |> Hello.Rag.Chunker.chunk_with_metadata()
+    |> Hello.Rag.Embedder.generate_embeddings()
   end
 end
