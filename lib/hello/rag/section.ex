@@ -27,6 +27,7 @@ defmodule Hello.Rag.Section do
         constraints allow_empty?: false
       end
 
+      # see: https://hexdocs.pm/ash/3.5.32/Ash.Query.html#before_action/3
       prepare before_action(&Hello.Rag.Embedder.search_embedding/2)
     end
   end
