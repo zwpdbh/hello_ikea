@@ -47,7 +47,7 @@ defmodule Hello.LLMProvider.Config do
       response_endpoint: "#{base_url}/responses"
     }
 
-    {:ok, state} |> dbg()
+    {:ok, state}
   end
 
   @impl true

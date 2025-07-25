@@ -45,9 +45,8 @@ defmodule Hello.Documents.ArticleBuilder do
   # because the response JSON is too long, so it is malformed
   def create_article_v1(messages, _outline) do
     messages =
-      (messages ++
-         [%{role: :user, content: "Please generate a full article based on the provided outline"}])
-      |> dbg()
+      messages ++
+        [%{role: :user, content: "Please generate a full article based on the provided outline"}]
 
     run_query(messages, Article)
   end

@@ -140,6 +140,8 @@ end
 
 # For playing Hello.LLMProvider.ChatClient
 defmodule Hello.LLMProvider.ChatClient.Playground do
+  require Logger
+
   def chat() do
     Hello.LLMProvider.ChatClient.chat(%{
       "messages" => [
@@ -159,7 +161,7 @@ defmodule Hello.LLMProvider.ChatClient.Playground do
         "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
         "temperature" => 1
       },
-      stream: fn x -> dbg(x) end
+      stream: fn x -> Logger.info(x) end
     )
   end
 

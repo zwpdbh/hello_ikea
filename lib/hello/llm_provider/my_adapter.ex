@@ -131,13 +131,9 @@ defmodule Hello.LLMProvider.MyAdapter do
   """
   @impl InstructorLite.Adapter
   def parse_response(response, _opts) do
-    # response |> dbg()
-
     case response do
       %{"choices" => [%{"message" => %{"content" => json, "refusal" => nil}}]} ->
-        json |> dbg()
-
-        InstructorLite.JSON.decode(json) |> dbg()
+        InstructorLite.JSON.decode(json)
 
       %{"choices" => [%{"message" => %{"refusal" => refusal}}]} ->
         {:error, :refusal, refusal}
