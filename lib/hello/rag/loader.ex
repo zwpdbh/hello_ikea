@@ -26,7 +26,7 @@ defmodule Hello.Rag.Loader do
 
       contents ++ acc
     end)
-    |> Enum.take(3)
+    |> Enum.take(1)
   end
 
   def load_files_from_folder(folder_path) do
