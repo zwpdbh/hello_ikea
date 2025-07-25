@@ -21,7 +21,6 @@ defmodule Hello.Rag.Embedder do
         embedding: embedding,
         metadata: metadata
       })
-      |> dbg()
     end)
   end
 end
