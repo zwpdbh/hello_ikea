@@ -18,7 +18,7 @@ defmodule Hello.Rag.Play do
     |> Hello.Rag.Embedder.store_embeddings_and_chunks()
   end
 
-  def search_section() do
-    Hello.Rag.search_section(%{query: "what is bumblebee?"})
+  def search_section(query) do
+    Hello.Rag.Generator.generate_response(query)
   end
 end
