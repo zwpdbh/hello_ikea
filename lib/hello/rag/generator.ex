@@ -4,24 +4,29 @@ defmodule Hello.Rag.Generator do
 
     context =
       sections
-      |> Enum.map(fn %Hello.Rag.Section{chunk: chunk} -> chunk end)
+      |> Enum.map(fn %Hello.Rag.Section{chunk: chunk} ->
+        """
+        [...]
+        #{chunk}
+        [...]
+        """
+      end)
       |> Enum.join("\n\n")
 
-    prompt =
-      """
-      <|system|>
-      You are a helpful assistant.</s>
-      <|user|>
-      Context information is below.
-      ---------------------
-      #{context}
-      ---------------------
-      Given the context information and no prior knowledge, answer the query.
-      Query: #{query}
-      Answer: </s>
-      <|assistant|>
-      """
+    """
+    <|system|>
+    You are a helpful assistant.</s>
+    <|user|>
+    Context information is below.
+    ---------------------
+    #{context}
+    ---------------------
+    Given the context information and no prior knowledge, answer the query.
+    Query: #{query}
+    Answer: </s>
+    <|assistant|>
+    """
 
-    Nx.Serving.batched_run(MyLLMServing, prompt)
+    # Nx.Serving.batched_run(MyLLMServing, prompt)
   end
 end
