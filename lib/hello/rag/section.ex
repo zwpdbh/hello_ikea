@@ -1,8 +1,8 @@
 defmodule Hello.Rag.Section do
   require Ash.Query
-  require Ash.Resource.Preparation.Builtins
 
   use Ash.Resource,
+    otp_app: :hello,
     domain: Hello.Rag,
     data_layer: AshPostgres.DataLayer
 
@@ -28,7 +28,25 @@ defmodule Hello.Rag.Section do
       end
 
       # see: https://hexdocs.pm/ash/3.5.32/Ash.Query.html#before_action/3
-      prepare before_action(&Hello.Rag.Embedder.search_embedding/2)
+      # prepare before_action(&search_section/2)
+      prepare before_action(fn query, context ->
+                %{query: ash_query} = query.arguments
+                query_string = Ash.CiString.value(ash_query)
+
+                {:ok, query_embedding_vector} =
+                  Hello.Rag.Embedder.generate_embedding(query_string)
+
+                Ash.Query.filter(
+                  query,
+                  expr(vector_cosine_distance(embedding, ^query_embedding_vector) < 0.5)
+                )
+                |> Ash.Query.sort(
+                  {calc(vector_cosine_distance(embedding, ^query_embedding_vector),
+                     type: :float
+                   ), :asc}
+                )
+                |> Ash.Query.limit(5)
+              end)
     end
   end
 
