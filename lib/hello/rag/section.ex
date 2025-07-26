@@ -14,12 +14,37 @@ defmodule Hello.Rag.Section do
       index "embedding vector_cosine_ops",
         name: "embeddings_index",
         using: "hnsw"
+
+      index "content_hash",
+        name: "content_hash_index"
     end
   end
 
   actions do
     create :create do
       accept [:chunk, :metadata, :embedding]
+
+      upsert? true
+      upsert_identity :unique_content_hash
+      upsert_fields [:content_hash]
+
+      change fn changeset, _ctx ->
+        case Ash.Changeset.get_attribute(changeset, :chunk) do
+          nil ->
+            changeset
+
+          chunk ->
+            hash =
+              :crypto.hash(:sha256, chunk)
+              |> Base.encode16(case: :lower)
+
+            Ash.Changeset.force_change_attribute(changeset, :content_hash, hash)
+        end
+      end
+    end
+
+    read :read do
+      primary? true
     end
 
     read :search_section do
@@ -60,6 +85,15 @@ defmodule Hello.Rag.Section do
       constraints dimensions: 384
     end
 
+    attribute :content_hash, :string do
+      constraints max_length: 64
+      allow_nil? false
+    end
+
     timestamps(type: :utc_datetime)
+  end
+
+  identities do
+    identity :unique_content_hash, [:content_hash]
   end
 end
