@@ -1,26 +1,26 @@
-defmodule Hello.LLM.ChatClient do
+defmodule Hello.LLMProvider.ChatClient do
   @moduledoc """
   A client module for interacting with an LLM-compatible chat API.
 
   This module allows sending prompts to an LLM endpoint, supporting both standard
   (non-streaming) and streaming responses. It uses the `Req` library to perform HTTP
   requests and expects the configuration (e.g., endpoint, API key, model) to be provided
-  by `Hello.LLM.Config`.
+  by `Hello.LLMProvider.Config`.
 
   ## Examples
 
-      iex> Hello.LLM.ChatClient.chat("What is the capital of France?")
+      iex> Hello.LLMProvider.ChatClient.chat("What is the capital of France?")
       {:ok, ["Paris"]}
 
-      iex> Hello.LLM.ChatClient.chat("tell me a story in 10 words", stream: fn x -> dbg(x) end)
+      iex> Hello.LLMProvider.ChatClient.chat("tell me a story in 10 words", stream: fn x -> dbg(x) end)
       :ok
 
   This module supports both streamed and non-streamed LLM responses.
   """
   require Logger
 
-  def endpoint, do: Hello.LLM.Config.get().chat_endpoint
-  def api_key, do: Hello.LLM.Config.get().api_key
+  def endpoint, do: Hello.LLMProvider.Config.get().chat_endpoint
+  def api_key, do: Hello.LLMProvider.Config.get().api_key
 
   defp headers do
     [
@@ -135,5 +135,67 @@ defmodule Hello.LLM.ChatClient do
   # When there is no more chunk, return the reversed events
   defp parsev2(buffer, "", events) do
     {buffer, Enum.reverse(events)}
+  end
+end
+
+# For playing Hello.LLMProvider.ChatClient
+defmodule Hello.LLMProvider.ChatClient.Playground do
+  require Logger
+
+  def chat() do
+    Hello.LLMProvider.ChatClient.chat(%{
+      "messages" => [
+        %{"content" => "what is the capital of France?", "role" => "user"}
+      ],
+      "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
+      "temperature" => 1
+    })
+  end
+
+  def chat_stream() do
+    Hello.LLMProvider.ChatClient.chat(
+      %{
+        "messages" => [
+          %{"content" => "tell me a story in 10 words", "role" => "user"}
+        ],
+        "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
+        "temperature" => 1
+      },
+      stream: fn x -> Logger.info(x) end
+    )
+  end
+
+  def chat_api_curl() do
+    # spawn a process to use curl to call out service
+    # `curl -i 'http://localhost:4000/api/chat' -H "content-type: application/json" --data-raw '{"request":{"model":"gpt-3.5-turbo","temperature":1,"messages":[{"role":"user","content":"Hello 3.5!"}]}}'
+
+    url = "http://localhost:4000/api/chat"
+    headers = "-H"
+    content_type = "content-type: application/json"
+    data = ~s({
+      "request": {
+        "model": "#{Hello.LLMProvider.Config.get().chat_model}",
+        "temperature": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "tell me a story in 10 words"
+          }
+        ]
+      }
+    })
+
+    {output, status} =
+      System.cmd("curl", [
+        "-i",
+        url,
+        headers,
+        content_type,
+        "--data-raw",
+        data
+      ])
+
+    IO.puts("Status: #{status}")
+    IO.puts("Output:\n#{output}")
   end
 end

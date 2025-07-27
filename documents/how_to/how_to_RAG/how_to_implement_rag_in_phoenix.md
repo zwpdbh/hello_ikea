@@ -1,5 +1,4 @@
-# Integrate LLM into Phoenix
-
+#  How to implement rag in phoenix
 
 ## References 
 

@@ -5,7 +5,7 @@ defmodule Hello.Repo do
   @impl true
   def installed_extensions do
     # Add extensions here, and the migration generator will install them.
-    ["ash-functions", "citext"]
+    ["ash-functions", "uuid-ossp", "citext", "pg_trgm", "vector"]
   end
 
   # Don't open unnecessary transactions

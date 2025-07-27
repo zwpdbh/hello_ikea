@@ -1,0 +1,259 @@
+# Explore RAG
+
+```elixir
+Mix.install(
+  [
+    # {:bumblebee, "~> 0.6.0"},
+    {:nx, "~> 0.9.0"},
+    {:exla, "~> 0.9.0"},
+    {:kino, "~> 0.14.0"},
+    {:hnswlib, "~> 0.1.5"},
+    {:req, "~> 0.5.0"},
+    {:kino_bumblebee, "~> 0.5.0"}
+  ],
+  config: [nx: [default_backend: EXLA.Backend]]
+)
+```
+
+## References
+
+* [Retrieval-Augmented Generation (RAG) with Elixir](https://shapath.com.np/posts/beginning-rag-elixir/)
+* [A RAG for Elixir in Elixir](https://bitcrowd.dev/a-rag-for-elixir-in-elixir/)
+* [A RAG Library for Elixir](https://bitcrowd.dev/a-rag-library-for-elixir/?utm_source=elixir-merge)
+* [How to use Jina embeddings in Elixir with Bumblebee](https://bitcrowd.dev/how-to-run-jina-embeddings-in-elixir/)
+* [Notes on semantic search with Elixir and Bumblebee](https://dev.to/ndrean/an-example-of-semantic-search-with-elixir-and-bumblebee-h9n)
+* [Bumblebee -- LLMs and RAG](https://hexdocs.pm/bumblebee/llms_rag.html)
+* [Elixir Machine Learning: Clustering, Bumblebee, and Structured Prompting](https://dockyard.com/blog/2024/03/05/elixir-machine-learning-clustering-bumblebee-structured-prompting)
+* [Generate embeddings with nomic-embed-text-v1 using Elixir Bumblebee](https://natetodd.com/blog/generate-embeddings-with-nomic-embed-text-v1-using-elixir-bumblebee)
+
+## Reproduce Example from Bumblebee Guide
+
+see: [LLMs and RAG](https://hexdocs.pm/bumblebee/llms_rag.html)
+
+<!-- livebook:{"break_markdown":true} -->
+
+Step01: let's upload a file to livebook and read its content
+This part is from example: [Work with Files in Livebook](https://peterullrich.com/work-with-files-in-livebook)
+
+```elixir
+#step01, download text document
+file = Kino.Input.file("Upload your file")
+```
+
+```elixir
+# 
+file_value = Kino.Input.read(file)
+```
+
+```elixir
+path = Kino.Input.file_path(file_value.file_ref)
+text = File.read!(path)
+```
+
+```elixir
+IO.puts("Document length: #{String.length(text)}")
+```
+
+Step02: Generating embeddings
+
+```elixir
+chunks =
+  text
+  |> String.codepoints()
+  |> Enum.chunk_every(1024)
+  |> Enum.map(&Enum.join/1)
+
+length(chunks)
+```
+
+```elixir
+repo = {:hf, "thenlper/gte-small"}
+
+{:ok, model_info} = Bumblebee.load_model(repo)
+{:ok, tokenizer} = Bumblebee.load_tokenizer(repo)
+
+:ok
+```
+
+```elixir
+serving =
+  Bumblebee.Text.TextEmbedding.text_embedding(model_info, tokenizer,
+    compile: [batch_size: 64, sequence_length: 512],
+    defn_options: [compiler: EXLA],
+    output_attribute: :hidden_state,
+    output_pool: :mean_pooling
+  )
+
+Kino.start_child({Nx.Serving, serving: serving, name: GteServing})
+```
+
+```elixir
+results = Nx.Serving.batched_run(GteServing, chunks)
+chunk_embeddings = for result <- results, do: result.embedding
+
+List.first(chunk_embeddings)
+```
+
+Step03: embedding index and retrieval
+
+```elixir
+{:ok, index} = HNSWLib.Index.new(:cosine, 384, 1_000_000)
+
+for embedding <- chunk_embeddings do
+  HNSWLib.Index.add_items(index, embedding)
+end
+
+HNSWLib.Index.get_current_count(index)
+```
+
+```elixir
+# Now, given a textual query, we first need to compute its embedding using the same embedding model. Once we have the embedding, 
+# we do a similarity lookup and get top 4 matching results.
+
+query = "What were the two main things the author worked on before college?"
+
+%{embedding: embedding} = Nx.Serving.batched_run(GteServing, query)
+{:ok, labels, dist} = HNSWLib.Index.knn_query(index, embedding, k: 4)
+```
+
+```elixir
+# The lookup conveniently returns indices, so we can get their corresponding chunks 
+# and join into a context text.
+# We can see some overlapping in our chunks
+context =
+  labels
+  |> Nx.to_flat_list()
+  |> Enum.sort()
+  |> Enum.map(fn idx -> "[...] " <> Enum.at(chunks, idx) <> " [...]" end)
+  |> Enum.join("\n\n")
+
+IO.puts(context)
+```
+
+```elixir
+
+```
+
+Step 04: Generating an answer
+
+```elixir
+hugging_face_token = System.fetch_env!("LB_HUGGING_FACE_TOKEN")
+```
+
+```elixir
+
+repo = {:hf, "mistralai/Mistral-7B-Instruct-v0.3", auth_token: hugging_face_token}
+
+{:ok, model_info} = Bumblebee.load_model(repo, type: :bf16)
+{:ok, tokenizer} = Bumblebee.load_tokenizer(repo)
+{:ok, generation_config} = Bumblebee.load_generation_config(repo)
+
+generation_config = Bumblebee.configure(generation_config, max_new_tokens: 100)
+
+:ok
+```
+
+```elixir
+serving =
+  Bumblebee.Text.generation(model_info, tokenizer, generation_config,
+    compile: [batch_size: 1, sequence_length: 6000],
+    defn_options: [compiler: EXLA]
+  )
+
+Kino.start_child({Nx.Serving, name: MistralServing, serving: serving})
+```
+
+```elixir
+prompt =
+  """
+  Context information is below.
+  ---------------------
+  #{context}
+  ---------------------
+  Given the context information and not prior knowledge, answer the query.
+  Query: #{query}
+  Answer:
+  """
+
+results = Nx.Serving.batched_run(MistralServing, prompt)
+```
+
+## General Steps
+
+* Document Ingestion (Input)
+* Chunking
+* Embedding & Vector Database
+* Generation & Output
+
+## Models I need from Huggingface
+
+```elixir
+{:ok, model} = 
+  Bumblebee.load_model({:hf, "sentence-transformers/all-MiniLM-L6-v2"})
+```
+
+```elixir
+{:ok, model_info} = Bumblebee.load_model({:hf, "bert-base-uncased"}, architecture: :base)
+{:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "bert-base-uncased"})
+
+text = "Hello, world!"
+inputs = Bumblebee.apply_tokenizer(tokenizer, text)
+
+Axon.predict(model_info.model, model_info.params, inputs).hidden_state[0]
+```
+
+```elixir
+repo = {:hf, "jinaai/jina-embeddings-v2-base-en"}
+
+{:ok, model_info} = Bumblebee.load_model(repo, architecture: :base)
+{:ok, tokenizer} = Bumblebee.load_tokenizer(repo)
+
+serving =
+  Bumblebee.Text.TextEmbedding.text_embedding(model_info, tokenizer,
+    compile: [batch_size: 64, sequence_length: 512],
+    defn_options: [compiler: EXLA],
+    output_attribute: :hidden_state,
+    output_pool: :mean_pooling
+  )
+```
+
+<!-- livebook:{"attrs":"e30","chunks":[[0,290],[292,691]],"kind":"Elixir.KinoBumblebee.TaskCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, model_info} = Bumblebee.load_model({:hf, "microsoft/resnet-50"})
+{:ok, featurizer} = Bumblebee.load_featurizer({:hf, "microsoft/resnet-50"})
+
+serving =
+  Bumblebee.Vision.image_classification(model_info, featurizer,
+    compile: [batch_size: 1],
+    defn_options: [compiler: EXLA]
+  )
+
+image_input = Kino.Input.image("Image", size: {224, 224})
+form = Kino.Control.form([image: image_input], submit: "Run")
+frame = Kino.Frame.new()
+
+Kino.listen(form, fn %{data: %{image: image}} ->
+  if image do
+    Kino.Frame.render(frame, Kino.Text.new("Running..."))
+
+    image =
+      image.file_ref
+      |> Kino.Input.file_path()
+      |> File.read!()
+      |> Nx.from_binary(:u8)
+      |> Nx.reshape({image.height, image.width, 3})
+
+    output = Nx.Serving.run(serving, image)
+
+    output.predictions
+    |> Enum.map(&{&1.label, &1.score})
+    |> Kino.Bumblebee.ScoredList.new()
+    |> then(&Kino.Frame.render(frame, &1))
+  end
+end)
+
+Kino.Layout.grid([form, frame], boxed: true, gap: 16)
+```
+
+<!-- livebook:{"offset":6871,"stamp":{"token":"XCP.qtOiB6FWquu_Z4lf5YdG83fO711QeWPKgANRQlq5h0DrqO_FpCVkLjZC3zf482oFpMDfrEcd3XYJR62kXn2T4_eaB-WT2Yu-Ab8LoYpYdNTuuVb2XcAsaiZDQ2Qy","version":2}} -->

@@ -45,9 +45,8 @@ defmodule Hello.Documents.ArticleBuilder do
   # because the response JSON is too long, so it is malformed
   def create_article_v1(messages, _outline) do
     messages =
-      (messages ++
-         [%{role: :user, content: "Please generate a full article based on the provided outline"}])
-      |> dbg()
+      messages ++
+        [%{role: :user, content: "Please generate a full article based on the provided outline"}]
 
     run_query(messages, Article)
   end
@@ -83,13 +82,13 @@ defmodule Hello.Documents.ArticleBuilder do
   end
 
   defp run_query(messages, response_model) do
-    config = Hello.LLM.Config.get()
+    config = Hello.LLMProvider.Config.get()
 
     {:ok, response} =
       InstructorLite.instruct(
         %{messages: messages, model: config.chat_model},
         response_model: response_model,
-        adapter: Hello.LLM.MyAdapter,
+        adapter: Hello.LLMProvider.MyAdapter,
         adapter_context: [
           api_key: config.api_key,
           url: config.chat_endpoint

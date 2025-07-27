@@ -9,7 +9,7 @@ defmodule HelloWeb.ChatController do
       |> put_resp_content_type(@nd_json_content_type)
       |> send_chunked(200)
 
-    Hello.LLM.ChatClient.chat(request,
+    Hello.LLMProvider.ChatClient.chat(request,
       stream: fn data ->
         result = Jason.encode!(data)
         chunk(conn, result)

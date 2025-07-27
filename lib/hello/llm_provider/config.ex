@@ -1,9 +1,9 @@
-defmodule Hello.LLM.Config do
+defmodule Hello.LLMProvider.Config do
   use GenServer
 
   @moduledoc """
   Loads and holds LLM/OpenAI config from app environment at startup.
-  Use `Hello.Llm.Config.get/0` to retrieve it.
+  Use `Hello.LLMProvider.Config.get/0` to retrieve it.
   """
 
   defstruct api_key: nil,
@@ -47,7 +47,7 @@ defmodule Hello.LLM.Config do
       response_endpoint: "#{base_url}/responses"
     }
 
-    {:ok, state} |> dbg()
+    {:ok, state}
   end
 
   @impl true

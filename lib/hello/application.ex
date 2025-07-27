@@ -22,8 +22,11 @@ defmodule Hello.Application do
       # Start to serve requests, typically the last entry
       HelloWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :hello]},
-      Hello.LLM.Config,
-      {Nx.Serving, serving: serving(), name: MyNxServing}
+      Hello.LLMProvider.Config,
+      {Nx.Serving, serving: serving(), name: MyNxServing},
+      {Nx.Serving,
+       serving: Hello.Rag.Serving.build_embedding_serving(), name: MyEmbeddingServing},
+      {Nx.Serving, serving: Hello.Rag.Serving.build_llm_serving(), name: MyLLMServing}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

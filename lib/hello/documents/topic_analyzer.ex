@@ -138,12 +138,12 @@ defmodule Hello.Documents.TopicAnalyzer do
   end
 
   defp run_query(messages, response_model) do
-    config = Hello.LLM.Config.get()
+    config = Hello.LLMProvider.Config.get()
 
     case InstructorLite.instruct(
            %{messages: messages},
            response_model: response_model,
-           adapter: Hello.LLM.MyAdapter,
+           adapter: Hello.LLMProvider.MyAdapter,
            adapter_context: [
              api_key: config.api_key,
              url: config.chat_endpoint

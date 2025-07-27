@@ -62,7 +62,9 @@ config :spark,
 config :hello,
   ecto_repos: [Hello.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Hello.Accounts]
+  ash_domains: [Hello.Accounts, Hello.Rag]
+
+config :hello, Hello.Repo, types: Hello.PostgrexTypes
 
 # Configures the endpoint
 config :hello, HelloWeb.Endpoint,

@@ -67,7 +67,7 @@ Current status of parsing.
 It relys on the fact the each chunk must be zero or more complete events.
 
 ```sh
-[(hello 0.1.0) lib/hello/LLM/chat_client.ex:84: Hello.LLM.ChatClient.parse/1]
+[(hello 0.1.0) lib/hello/LLM/chat_client.ex:84: Hello.LLMProvider.ChatClient.parse/1]
 chunk #=> "data: {\"id\":\"chatcmpl-BqaxTMJAA7ZffdVrhjxaX1iDa3Sjz\",\"choices\":[{\"delta\":{\"content\":\"Dog\",\"refusal\":null},\"index\":0,\"finish_reason\":null}],\"created\":1751874823,\"model\":\"chatgpt-4o-latest\",\"object\":\"chat.completion.chunk\",\"usage\":null,\"system_fingerprint\":\"fp_afccf7958a\"}\n\ndata: {\"id\":\"chatcmpl-BqaxTMJAA7ZffdVrhjxaX1iDa3Sjz\",\"choices\":[{\"delta\":{\"content\":\" found\",\"refusal\":null},\"index\":0,\"finish_reason\":null}],\"created\":1751874823,\"model\":\"chatgpt-4o-latest\",\"object\":\"chat.completion.chunk\",\"usage\":null,\"system_fingerprint\":\"fp_afccf7958a\"}\n\n"
 
 [(hello 0.1.0) lib/playground.ex:21: Playground.chat_stream/0]

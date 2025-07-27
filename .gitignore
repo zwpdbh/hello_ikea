@@ -38,3 +38,4 @@ npm-debug.log
 debug_error.txt
 .env
 envs/
+**/**.deb
