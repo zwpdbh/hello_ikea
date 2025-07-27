@@ -143,8 +143,7 @@ Solution:
 
 ```bash
 mix deps.clean exla && mix deps.get
-export XLA_TARGET=cuda12
-mix deps.compile exla
+export XLA_TARGET=cuda12 && mix deps.compile exla
 ```
 
 However, this time new error produced:
@@ -187,6 +186,9 @@ Failed to load NIF library /home/zw/code/elixir_programming/hello/_build/dev/lib
 
 Generated exla app
 ```
+
+solution: we need to install [NCCL](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html#down).
+Use the script `install_nccl.sh` to install `NCCL` according the above document.
 
 ## References 
 
