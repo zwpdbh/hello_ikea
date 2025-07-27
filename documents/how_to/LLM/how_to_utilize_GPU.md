@@ -190,6 +190,44 @@ Generated exla app
 solution: we need to install [NCCL](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html#down).
 Use the script `install_nccl.sh` to install `NCCL` according the above document.
 
+Keep compiling, it shows another error:
+
+```sh 
+Failed to load NIF library /home/zw/code/elixir_programming/hello/_build/dev/lib/exla/priv/libexla: 'libcudnn_engines_precompiled.so.9: cannot open shared object file: No such file or directory'
+```
+
+Solution: download [cuDNN Archive](https://developer.nvidia.com/rdp/cudnn-archive)
+
+```sh 
+sudo dpkg -i cudnn-local-repo-cross-sbsa-ubuntu2204-8.9.7.29_1.0-1_all.deb
+# Then follow the instruction to copy:
+# sudo cp /var/cudnn-local-repo-cross-sbsa-ubuntu2204-8.9.7.29/cudnn-local-82E66276-keyring.gpg /usr/share/keyrings/
+sudo apt-key add /usr/share/keyrings/cudnn-local-*.key
+sudo apt update
+sudo apt install libcudnn9-cuda-12 libcudnn9-dev-cuda-12 libcudnn9-samples
+
+# check libcudnn whether is installed by 
+dpkg -l | grep libcudnn
+```
+
+Finally
+
+```sh 
+mix deps.clean exla && mix deps.get
+export XLA_TARGET=cuda12 && mix deps.compile exla
+==> exla
+Unpacking /home/zw/.cache/xla/0.9.1/download/xla_extension-0.9.1-x86_64-linux-gnu-cuda12.tar.gz into /home/zw/code/elixir_programming/hello/deps/exla/cache
+Using libexla.so from /home/zw/.cache/xla/exla/elixir-1.18.4-erts-15.2.6-xla-0.9.1-exla-0.10.0-ymq6wkipo5buwst5rpr4nmx2iu/libexla.so
+EXLA_CPU_ONLY is not set, checking for nvcc availability
+CUDA is not available.
+g++ -fPIC -I/home/zw/.asdf/installs/erlang/27.3.3/erts-15.2.6/include -I/home/zw/code/elixir_programming/hello/deps/fine/include -Icache/xla_extension/include -Wall -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-comment -std=c++17 -w -O3 -c c_src/exla/exla_client.cc -o cache/0.10.0/objs/exla_client.o
+....
+exla_cuda.cc -o cache/0.10.0/objs/exla_cuda.o
+g++ cache/0.10.0/objs/exla.o cache/0.10.0/objs/exla_client.o cache/0.10.0/objs/exla_mlir.o cache/0.10.0/objs/ipc.o cache/0.10.0/objs/custom_calls/eigh_f32.o cache/0.10.0/objs/custom_calls/eigh_f64.o cache/0.10.0/objs/custom_calls/lu_bf16.o cache/0.10.0/objs/custom_calls/lu_f16.o cache/0.10.0/objs/custom_calls/lu_f32.o cache/0.10.0/objs/custom_calls/lu_f64.o cache/0.10.0/objs/custom_calls/qr_bf16.o cache/0.10.0/objs/custom_calls/qr_f16.o cache/0.10.0/objs/custom_calls/qr_f32.o cache/0.10.0/objs/custom_calls/qr_f64.o cache/0.10.0/objs/exla_cuda.o -o cache/libexla.so -Lcache/xla_extension/lib -lxla_extension -shared -fvisibility=hidden -Wl,-rpath,'$ORIGIN/xla_extension/lib'
+Compiling 23 files (.ex)
+Generated exla app
+```
+
 ## References 
 
 - [Google's XLA (Accelerated Linear Algebra) compiler/backend for Nx.](https://hexdocs.pm/exla/EXLA.html)
