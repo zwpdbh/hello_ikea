@@ -104,6 +104,14 @@ Sun Jul 27 12:12:52 2025
 +-----------------------------------------------------------------------------------------+
 ```
 
+It means 
+- GPU Model: NVIDIA GeForce RTX 3090
+- Total Memory: 24576 MiB (≈ 24 GB)
+- Used Memory: 1377 MiB (≈ 1.3 GB)
+- Free Memory: 24576 - 1377 ≈ 23.2 GB
+
+
+
 2. Rebuild EXLA with CUDA support
 
 ```bash
@@ -227,6 +235,36 @@ g++ cache/0.10.0/objs/exla.o cache/0.10.0/objs/exla_client.o cache/0.10.0/objs/e
 Compiling 23 files (.ex)
 Generated exla app
 ```
+
+After starting Phoenix application, then run `nvidia-smi`:
+
+```sh
+nvidia-smi
+Mon Jul 28 09:44:45 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.86.16              Driver Version: 572.16         CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |
+| 30%   35C    P8             29W /  350W |   23736MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A              25      G   /Xwayland                             N/A      |
+|    0   N/A  N/A            7753      C   /beam.smp                             N/A      |
++-----------------------------------------------------------------------------------------+ 
+```
+
+
+
 
 ## References 
 
