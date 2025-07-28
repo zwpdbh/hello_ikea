@@ -1,5 +1,6 @@
-# Different from ChatOpenaiLive, it is chat with local LLM
-defmodule HelloWeb.ChatLive.Index do
+# This is from example:
+# Streaming OpenAI in Elixir Phoenix Part III -- https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-3/
+defmodule HelloWeb.ChatOpenaiLive.Index do
   use HelloWeb, :live_view
 
   @impl true

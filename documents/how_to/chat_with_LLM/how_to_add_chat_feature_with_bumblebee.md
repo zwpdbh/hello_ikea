@@ -17,6 +17,9 @@
 To save chat persistently into db, we need to build related model.
 I will use Ash.Resource to model this. 
 
+- Domain: Chat 
+- Resources: Conversation, Message
+
 ## Step02 -- build chat UI using liveview 
 
 ## Step03 -- Improve Chat experience by streaming
