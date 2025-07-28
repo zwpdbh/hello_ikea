@@ -22,7 +22,7 @@ defmodule Hello.Rag.Serving do
     generation_config = Bumblebee.configure(generation_config, max_new_tokens: 512)
 
     Bumblebee.Text.generation(model_info, tokenizer, generation_config,
-      compile: [batch_size: 1, sequence_length: 2048],
+      compile: [batch_size: 1, sequence_length: 1024],
       defn_options: [compiler: EXLA, type: :f16],
       stream: false
     )

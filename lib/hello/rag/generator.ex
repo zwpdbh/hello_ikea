@@ -22,7 +22,7 @@ defmodule Hello.Rag.Generator do
       ---------------------
       #{context}
       ---------------------
-      Given the context information and no prior knowledge, answer the query.
+      Given the context information and no prior knowledge, answer the query concisely.
       Query: #{query}
       Answer: </s>
       <|assistant|>
