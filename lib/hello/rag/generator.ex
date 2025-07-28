@@ -13,20 +13,21 @@ defmodule Hello.Rag.Generator do
       end)
       |> Enum.join("\n\n")
 
-    """
-    <|system|>
-    You are a helpful assistant.</s>
-    <|user|>
-    Context information is below.
-    ---------------------
-    #{context}
-    ---------------------
-    Given the context information and no prior knowledge, answer the query.
-    Query: #{query}
-    Answer: </s>
-    <|assistant|>
-    """
+    prompt =
+      """
+      <|system|>
+      You are a helpful assistant.</s>
+      <|user|>
+      Context information is below.
+      ---------------------
+      #{context}
+      ---------------------
+      Given the context information and no prior knowledge, answer the query concisely.
+      Query: #{query}
+      Answer: </s>
+      <|assistant|>
+      """
 
-    # Nx.Serving.batched_run(MyLLMServing, prompt)
+    Nx.Serving.batched_run(MyLLMServing, prompt)
   end
 end
