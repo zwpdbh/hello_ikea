@@ -14,9 +14,5 @@ defmodule Hello.Chat.Conversation do
 
   relationships do
     has_many :messages, Hello.Chat.Message
-
-    belongs_to :user, Hello.Accounts.User do
-      allow_nil? false
-    end
   end
 end

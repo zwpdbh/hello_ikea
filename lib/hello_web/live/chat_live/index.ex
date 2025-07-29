@@ -1,5 +1,6 @@
 # Different from ChatOpenaiLive, it is chat with local LLM
 defmodule HelloWeb.ChatLive.Index do
+  require Logger
   use HelloWeb, :live_view
 
   @impl true
@@ -93,7 +94,7 @@ defmodule HelloWeb.ChatLive.Index do
       |> assign(:messages, updated_messages)
       |> assign(:running, true)
       |> start_async(:chat_completion, fn ->
-        run_chat_completion(pid, Enum.reverse(updated_messages))
+        run_chat_completion(pid, updated_messages)
       end)
 
     {:noreply, socket}
@@ -118,22 +119,17 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, assign(socket, :running, false)}
   end
 
-  defp run_chat_completion(pid, messages) do
-    request = %{
-      model: "#{Hello.LLMProvider.Config.get().chat_model}",
-      temperature: 1,
-      messages: messages
-    }
+  defp run_chat_completion(pid, [
+         %{role: :user, content: query} = _new_message | _message_history
+       ]) do
+    # Example: what should I do to implement rag in elixir?
+    Hello.Rag.Generator.generate_response_stream(query,
+      stream: fn
+        :done ->
+          Logger.info("Stream finished")
 
-    Hello.LLMProvider.ChatClient.chat(request,
-      stream: fn chunk ->
-        case chunk do
-          %{"choices" => [%{"delta" => %{"content" => content}}]} ->
-            send(pid, {:chunk, content})
-
-          _ ->
-            nil
-        end
+        chunk ->
+          send(pid, {:chunk, chunk})
       end
     )
   end

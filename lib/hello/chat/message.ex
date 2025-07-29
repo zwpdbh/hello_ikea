@@ -15,6 +15,10 @@ defmodule Hello.Chat.Message do
       allow_nil? false
     end
 
+    attribute :sender, :string do
+      allow_nil? false
+    end
+
     timestamps()
   end
 
