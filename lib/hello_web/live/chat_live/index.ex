@@ -119,18 +119,66 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, assign(socket, :running, false)}
   end
 
-  defp run_chat_completion(pid, [
-         %{role: :user, content: query} = _new_message | _message_history
-       ]) do
-    # Example: what should I do to implement rag in elixir?
-    Hello.Rag.Generator.generate_response_stream(query,
-      stream: fn
-        :done ->
-          Logger.info("Stream finished")
+  defp add_context([%{role: :user, content: message_content} | rest] = _messages) do
+    {:ok, sections} = Hello.Rag.search_section(%{query: message_content})
 
-        chunk ->
-          send(pid, {:chunk, chunk})
+    context =
+      sections
+      |> Enum.map(fn %Hello.Rag.Section{chunk: chunk} ->
+        """
+        [...]
+        #{chunk}
+        [...]
+        """
+      end)
+      |> Enum.join("\n\n")
+
+    updated_message_with_context =
+      """
+      Please use following context
+      ---------------------
+      #{context}
+      ---------------------
+      Question: #{message_content}
+      """
+
+    [%{role: :user, content: updated_message_with_context} | rest]
+  end
+
+  defp run_chat_completion(pid, messages) do
+    updated_messages = add_context(messages)
+
+    request = %{
+      model: "#{Hello.LLMProvider.Config.get().chat_model}",
+      temperature: 1,
+      messages: updated_messages
+    }
+
+    Hello.LLMProvider.ChatClient.chat(request,
+      stream: fn chunk ->
+        case chunk do
+          %{"choices" => [%{"delta" => %{"content" => content}}]} ->
+            send(pid, {:chunk, content})
+
+          _ ->
+            nil
+        end
       end
     )
   end
+
+  # defp run_chat_completion(pid, [
+  #        %{role: :user, content: query} = _new_message | _message_history
+  #      ]) do
+  #   # Example: what should I do to implement rag in elixir?
+  #   Hello.Rag.Generator.generate_response_stream(query,
+  #     stream: fn
+  #       :done ->
+  #         Logger.info("Stream finished")
+
+  #       chunk ->
+  #         send(pid, {:chunk, chunk})
+  #     end
+  #   )
+  # end
 end
