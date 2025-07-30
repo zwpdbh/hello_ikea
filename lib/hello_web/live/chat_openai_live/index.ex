@@ -1,6 +1,6 @@
-# Different from ChatOpenaiLive, it is chat with local LLM
-defmodule HelloWeb.ChatLive.Index do
-  require Logger
+# This is from example:
+# Streaming OpenAI in Elixir Phoenix Part III -- https://benreinhart.com/blog/openai-streaming-elixir-phoenix-part-3/
+defmodule HelloWeb.ChatOpenaiLive.Index do
   use HelloWeb, :live_view
 
   @impl true
@@ -94,7 +94,7 @@ defmodule HelloWeb.ChatLive.Index do
       |> assign(:messages, updated_messages)
       |> assign(:running, true)
       |> start_async(:chat_completion, fn ->
-        run_chat_completion(pid, updated_messages)
+        run_chat_completion(pid, Enum.reverse(updated_messages))
       end)
 
     {:noreply, socket}
@@ -119,39 +119,11 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, assign(socket, :running, false)}
   end
 
-  defp add_context([%{role: :user, content: message_content} | rest] = _messages) do
-    {:ok, sections} = Hello.Rag.search_section(%{query: message_content})
-
-    context =
-      sections
-      |> Enum.map(fn %Hello.Rag.Section{chunk: chunk} ->
-        """
-        [...]
-        #{chunk}
-        [...]
-        """
-      end)
-      |> Enum.join("\n\n")
-
-    updated_message_with_context =
-      """
-      Please use following context
-      ---------------------
-      #{context}
-      ---------------------
-      Question: #{message_content}
-      """
-
-    [%{role: :user, content: updated_message_with_context} | rest]
-  end
-
   defp run_chat_completion(pid, messages) do
-    updated_messages = add_context(messages)
-
     request = %{
       model: "#{Hello.LLMProvider.Config.get().chat_model}",
       temperature: 1,
-      messages: updated_messages
+      messages: messages
     }
 
     Hello.LLMProvider.ChatClient.chat(request,
@@ -166,19 +138,4 @@ defmodule HelloWeb.ChatLive.Index do
       end
     )
   end
-
-  # defp run_chat_completion(pid, [
-  #        %{role: :user, content: query} = _new_message | _message_history
-  #      ]) do
-  #   # Example: what should I do to implement rag in elixir?
-  #   Hello.Rag.Generator.generate_response_stream(query,
-  #     stream: fn
-  #       :done ->
-  #         Logger.info("Stream finished")
-
-  #       chunk ->
-  #         send(pid, {:chunk, chunk})
-  #     end
-  #   )
-  # end
 end

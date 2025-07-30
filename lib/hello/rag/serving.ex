@@ -24,7 +24,7 @@ defmodule Hello.Rag.Serving do
     Bumblebee.Text.generation(model_info, tokenizer, generation_config,
       compile: [batch_size: 1, sequence_length: 1024],
       defn_options: [compiler: EXLA, type: :f16],
-      stream: false
+      stream: true
     )
   end
 end

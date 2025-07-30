@@ -62,7 +62,7 @@ config :spark,
 config :hello,
   ecto_repos: [Hello.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Hello.Accounts, Hello.Rag]
+  ash_domains: [Hello.Accounts, Hello.Rag, Hello.Chat]
 
 config :hello, Hello.Repo, types: Hello.PostgrexTypes
 

@@ -18,7 +18,7 @@ defmodule Hello.Rag.Play do
     |> Hello.Rag.Embedder.store_embeddings_and_chunks()
   end
 
-  def search_section(query) do
+  def chat(query) do
     Hello.Rag.Generator.generate_response(query)
   end
 end

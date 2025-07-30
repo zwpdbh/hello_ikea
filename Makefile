@@ -12,7 +12,7 @@ kill_erlang_node:
 
 run_app:
 	make kill_erlang_node
-	iex --erl "-kernel shell_history enabled" --name hello@127.0.0.1 --cookie some_token -S mix phx.server 
+	export XLA_TARGET="cuda12" && export TF_GPU_ALLOCATOR=cuda_malloc_async && iex --erl "-kernel shell_history enabled" --name hello@127.0.0.1 --cookie some_token -S mix phx.server 
 
 # livebook could be installed using escripts
 # after erlang and elixir is installed, just run: 

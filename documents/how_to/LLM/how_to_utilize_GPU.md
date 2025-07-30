@@ -263,8 +263,30 @@ Mon Jul 28 09:44:45 2025
 +-----------------------------------------------------------------------------------------+ 
 ```
 
+Notice the: `/beam.smp` meaning the phoenix application is using GPU now. 
+
+Key checkpoint: 
+
+- Install `sudo apt install nvidia-cuda-toolkit`
+- `export XLA_TARGET=cuda12 && mix deps.compile exla` should show: `CUDA is available.`
+- Make sure the `System.get_env("XLA_TARGET")` is `cuda12`
+
+When start phoenix application, it should show logs relating with GPU memory allocation:
+
+```bash 
+[info] StreamExecutor device (0): NVIDIA GeForce RTX 3090, Compute Capability 8.6
+...
+[info] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_4', 4 bytes spill stores, 4 bytes spill loads
+[info] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_5', 80 bytes spill stores, 80 bytes spill loads
+...
+```
 
 
+## How to monitor GPU usage 
+
+```bash 
+watch -n 0.5 nvidia-smi
+```
 
 ## References 
 
