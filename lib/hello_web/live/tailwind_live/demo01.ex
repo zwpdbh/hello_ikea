@@ -51,6 +51,25 @@ defmodule HelloWeb.TailwindLive.Demo01 do
         Tiramisu tart croissant soufflé danish tootsie roll candy apple pie. Bear claw brownie sweet roll chupa chups jelly beans cupcake shortbread chocolate. Candy bonbon sugar plum marzipan lemon drops cake. Chocolate fruitcake cake soufflé ice cream cheesecake chocolate bar marshmallow. Sesame snaps wafer oat cake candy cake jelly-o. Gummies wafer sweet roll toffee pastry. Soufflé marshmallow sesame snaps apple pie jelly-o tootsie roll.
       </p>
     </div>
+
+    <div class="p-20 bg-gray-800 border-gray-900 rounded-lg space-y-2">
+      <h2 class="text-gray-200">Color</h2>
+      <div class="p-4 rounded-lg bg-red-100 text-red-800">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-200 text-red-700">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-300 text-red-600">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-400 text-red-500">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-500 text-red-400">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-600 text-red-300">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-700 text-red-200">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-800 text-red-100">I am a box</div>
+    </div>
+
+    <div class="p-20">
+      <h2 class="text-4xl text-gray-800 text-bold">Pseudo-classes: hover, focus, and active</h2>
+      <div>
+        <button class="rounded bg-blue-200 hover:bg-blue-500 hover:text-gray-200">Click me</button>
+      </div>
+    </div>
     """
   end
 end
