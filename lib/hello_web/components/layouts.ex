@@ -58,6 +58,13 @@ defmodule HelloWeb.Layouts do
               bumblebee
             </.link>
           </li>
+
+          <li>
+            <.link navigate={~p"/tailwind"} class="font-semibold text-gray-700 hover:text-gray-900">
+              tailwind
+            </.link>
+          </li>
+
           <li>
             <.user_info current_user={@current_user} socket={@socket} />
           </li>

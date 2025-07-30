@@ -1,0 +1,27 @@
+defmodule HelloWeb.TailwindLive.Index do
+  use HelloWeb, :live_view
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    Tailwind CSS demos
+    <ul>
+      <li>
+        <.link navigate={~p"/tailwind/demo01"} class="text-blue-500 hover:underline">
+          Demo 01 -- core elements
+        </.link>
+      </li>
+      <li>
+        <.link navigate={~p"/tailwind/demo02"} class="text-blue-500 hover:underline">
+          Demo 02 -- box properties
+        </.link>
+      </li>
+    </ul>
+    """
+  end
+end

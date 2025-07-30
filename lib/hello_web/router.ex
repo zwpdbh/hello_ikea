@@ -40,11 +40,18 @@ defmodule HelloWeb.Router do
       live "/chats", ChatLive.Index, :index
       live "/chats_openai", ChatOpenaiLive.Index, :index
       live "/bumblebee", BumblebeeLive.Index, :index
+
+      # For demo different tailwind practises
+      live "/tailwind", TailwindLive.Index, :index
+      live "/tailwind/demo01", TailwindLive.Demo01, :demo01
+      live "/tailwind/demo02", TailwindLive.Demo02, :demo02
     end
   end
 
   scope "/", HelloWeb do
     pipe_through :browser
+
+    get "/.well-known/appspecific/com.chrome.devtools.json", ChromeDevToolsController, :index
 
     auth_routes AuthController, Hello.Accounts.User, path: "/auth"
     sign_out_route AuthController
