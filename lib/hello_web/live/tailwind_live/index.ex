@@ -13,12 +13,12 @@ defmodule HelloWeb.TailwindLive.Index do
     <ul>
       <li>
         <.link navigate={~p"/tailwind/demo01"} class="text-blue-500 hover:underline">
-          Demo 01 -- core elements
+          Demo 01 -- main elements
         </.link>
       </li>
       <li>
         <.link navigate={~p"/tailwind/demo02"} class="text-blue-500 hover:underline">
-          Demo 02 -- box properties
+          Demo 02 -- layouts
         </.link>
       </li>
     </ul>

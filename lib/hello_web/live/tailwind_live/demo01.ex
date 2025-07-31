@@ -54,20 +54,26 @@ defmodule HelloWeb.TailwindLive.Demo01 do
 
     <div class="p-20 bg-gray-800 border-gray-900 rounded-lg space-y-2">
       <h2 class="text-gray-200">Color</h2>
-      <div class="p-4 rounded-lg bg-red-100 text-red-800">I am a box</div>
-      <div class="p-4 rounded-lg bg-red-200 text-red-700">I am a box</div>
+      <div class="p-4 rounded-lg bg-red-100 text-red-800 hover:text-red-100 hover:bg-red-800 hover:translate-x-10 transform transition duration-300">
+        I am a box
+      </div>
+      <div class="p-4 rounded-lg bg-red-200 text-red-700  hover:translate-x-10 duration-300 ">
+        I am a box
+      </div>
       <div class="p-4 rounded-lg bg-red-300 text-red-600">I am a box</div>
       <div class="p-4 rounded-lg bg-red-400 text-red-500">I am a box</div>
       <div class="p-4 rounded-lg bg-red-500 text-red-400">I am a box</div>
       <div class="p-4 rounded-lg bg-red-600 text-red-300">I am a box</div>
       <div class="p-4 rounded-lg bg-red-700 text-red-200">I am a box</div>
       <div class="p-4 rounded-lg bg-red-800 text-red-100">I am a box</div>
-    </div>
-
-    <div class="p-20">
-      <h2 class="text-4xl text-gray-800 text-bold">Pseudo-classes: hover, focus, and active</h2>
       <div>
-        <button class="rounded bg-blue-200 hover:bg-blue-500 hover:text-gray-200">Click me</button>
+        <h1 class="text-6xl font-bold text-gray-800 bg-gradient-to-br from-blue-400 to-purple-400">
+          Whoa Gradients
+        </h1>
+
+        <h1 class="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400">
+          Whoa Gradients
+        </h1>
       </div>
     </div>
     """
