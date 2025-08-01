@@ -26,6 +26,11 @@ defmodule HelloWeb.TailwindLive.Index do
           Demo 03 -- layouts: grid
         </.link>
       </li>
+      <li>
+        <.link navigate={~p"/tailwind/demo04"} class="text-blue-500 hover:underline">
+          Demo04 -- My Resume
+        </.link>
+      </li>
     </ul>
     """
   end
