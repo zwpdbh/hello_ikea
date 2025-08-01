@@ -39,6 +39,19 @@ defmodule HelloWeb.TailwindLive.Demo02 do
       <div>logo</div>
       <div>navigation</div>
     </div>
+
+    <div class="bg-yellow-500 p-10 lg:flex lg:space-x-8  sm:space-y-0 space-y-2">
+      <div class="flex-shrink bg-white p-2">Hello</div>
+      <div class="flex-grow bg-white p-2">Hello</div>
+      <div class="flex-grow bg-white p-2">Hello</div>
+    </div>
+
+    <div class="bg-teal-700 h-64">
+      <div class="lg:flex h-full items-center items-stretch">
+        <div class="hidden lg:block w-1/6 bg-orange-500 p-10">sidebar</div>
+        <div class="lg:flex-grow bg-teal-500 p-10">content</div>
+      </div>
+    </div>
     """
   end
 end

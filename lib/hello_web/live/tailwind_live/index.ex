@@ -18,7 +18,12 @@ defmodule HelloWeb.TailwindLive.Index do
       </li>
       <li>
         <.link navigate={~p"/tailwind/demo02"} class="text-blue-500 hover:underline">
-          Demo 02 -- layouts
+          Demo 02 -- layouts: flexbox
+        </.link>
+      </li>
+      <li>
+        <.link navigate={~p"/tailwind/demo03"} class="text-blue-500 hover:underline">
+          Demo 03 -- layouts: grid
         </.link>
       </li>
     </ul>
