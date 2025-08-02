@@ -138,7 +138,7 @@ defmodule Hello.Documents.TopicAnalyzer do
   end
 
   defp run_query(messages, response_model) do
-    config = Hello.LLMProvider.Config.get()
+    config = Hello.LLMProvider.Setting.get()
 
     case InstructorLite.instruct(
            %{messages: messages},

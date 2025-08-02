@@ -82,7 +82,7 @@ defmodule Hello.Documents.ArticleBuilder do
   end
 
   defp run_query(messages, response_model) do
-    config = Hello.LLMProvider.Config.get()
+    config = Hello.LLMProvider.Setting.get()
 
     {:ok, response} =
       InstructorLite.instruct(

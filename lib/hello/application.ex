@@ -22,11 +22,13 @@ defmodule Hello.Application do
       # Start to serve requests, typically the last entry
       HelloWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :hello]},
-      Hello.LLMProvider.Config,
-      {Nx.Serving, serving: serving(), name: MyNxServing},
-      {Nx.Serving,
-       serving: Hello.Rag.Serving.build_embedding_serving(), name: MyEmbeddingServing},
-      {Nx.Serving, serving: Hello.Rag.Serving.build_llm_serving(), name: MyLLMServing}
+      Hello.LLMProvider.Setting,
+      # {Nx.Serving, serving: serving(), name: MyNxServing},
+      # {Nx.Serving,
+      #  serving: Hello.Rag.Serving.build_embedding_serving(), name: MyEmbeddingServing},
+      # {Nx.Serving, serving: Hello.Rag.Serving.build_llm_serving(), name: MyLLMServing},
+      {Venomous.SnakeSupervisor, [strategy: :one_for_one, max_restarts: 0, max_children: 50]},
+      {Venomous.PetSnakeSupervisor, [strategy: :one_for_one, max_children: 10]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

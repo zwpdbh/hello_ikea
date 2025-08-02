@@ -149,7 +149,7 @@ defmodule HelloWeb.ChatLive.Index do
     updated_messages = add_context(messages)
 
     request = %{
-      model: "#{Hello.LLMProvider.Config.get().chat_model}",
+      model: "#{Hello.LLMProvider.Setting.get().chat_model}",
       temperature: 1,
       messages: updated_messages
     }

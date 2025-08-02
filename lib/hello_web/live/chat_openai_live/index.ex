@@ -121,7 +121,7 @@ defmodule HelloWeb.ChatOpenaiLive.Index do
 
   defp run_chat_completion(pid, messages) do
     request = %{
-      model: "#{Hello.LLMProvider.Config.get().chat_model}",
+      model: "#{Hello.LLMProvider.Setting.get().chat_model}",
       temperature: 1,
       messages: messages
     }

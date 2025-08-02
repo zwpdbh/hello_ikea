@@ -78,7 +78,8 @@ defmodule Hello.MixProject do
       {:pgvector, "~> 0.3.0"},
       {:bumblebee, path: "~/code/elixir_programming/examples/bumblebee"},
       {:exla, ">= 0.10.0"},
-      {:text_chunker, "~> 0.4.0"}
+      {:text_chunker, "~> 0.4.0"},
+      {:venomous, "~> 0.7.7"}
     ]
   end
 
