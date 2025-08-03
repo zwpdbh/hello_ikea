@@ -1,7 +1,7 @@
 defmodule Hello.Venomous.PlayTest do
   use Hello.DataCase
   alias Venomous.SnakeArgs
-  import Venomous.Python
+  import Venomous
 
   test "case01" do
     timeout = 1_000
