@@ -12,7 +12,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
     <div class="h-screen bg-white grid grid-cols-8 gap-4">
       <div class="bg-gray-100 p-2 space-y-2 flex flex-col">
         <div class="flex justify-end">
-          <.icon name="hero-adjustments-horizontal" class="hover:bg-gray-400" />
+          <.icon name="hero-arrow-left-end-on-rectangle" class="hover:bg-gray-400" />
         </div>
 
         <div>
