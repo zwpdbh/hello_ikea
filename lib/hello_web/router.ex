@@ -48,6 +48,7 @@ defmodule HelloWeb.Router do
       live "/tailwind/demo03", TailwindLive.Demo03, :demo03
       live "/tailwind/demo04", TailwindLive.Demo04, :demo04
       live "/tailwind/demo05", TailwindLive.Demo05, :demo05
+      live "/tailwind/demo06", TailwindLive.Demo06, :demo06
     end
   end
 
