@@ -158,7 +158,7 @@ defmodule HelloWeb.ResumeComponents do
 
   def resume(assigns) do
     ~H"""
-    <div class="p-20 bg-white grid grid-cols-6 gap-4 text-gray-800">
+    <div class="p-20 h-screen bg-white grid grid-cols-6 gap-4 text-gray-800">
       {render_slot(@inner_block)}
     </div>
     """
