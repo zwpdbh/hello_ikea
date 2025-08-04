@@ -31,6 +31,11 @@ defmodule HelloWeb.TailwindLive.Index do
           Demo04 -- My Resume
         </.link>
       </li>
+      <li>
+        <.link navigate={~p"/tailwind/demo05"} class="text-blue-500 hover:underline">
+          Demo04 -- My Resume using liveview components
+        </.link>
+      </li>
     </ul>
     """
   end
