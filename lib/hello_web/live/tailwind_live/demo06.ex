@@ -7,9 +7,9 @@ defmodule HelloWeb.TailwindLive.Demo06 do
       socket
       |> assign(:sidebar_open, true)
       |> assign(:messages, [
-        # %{from: "bot", content: "this is cool"},
-        # %{from: "user01", content: "I am noob"},
-        # %{from: "user02", content: "It is fine"}
+        %{from: "bot", content: "this is cool"},
+        %{from: "user01", content: "I am noob"},
+        %{from: "user02", content: "It is fine"}
       ])
 
     {:ok, socket}
@@ -59,19 +59,19 @@ defmodule HelloWeb.TailwindLive.Demo06 do
       </div>
 
       <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
-        <div class="p-4 flex-1 flex flex-col">
+        <div class="p-4 flex-1 flex ">
           <div class={
             if @messages == [],
               do: "flex-1 flex items-center justify-center",
-              else: "flex-col"
+              else: "flex-1 flex flex-col"
           }>
             <%= if @messages != [] do %>
-              <div class="flex-1 overflow-y-auto bg-blue-200 rounded-lg p-2 mb-4">
+              <div class="flex-1 overflow-y-auto rounded-lg p-2 mb-4">
                 <.render_messages messages={@messages} />
               </div>
             <% end %>
 
-            <div class="w-4/5 rounded-2xl p-4 ">
+            <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4 ", else: "rounded-2xl p-4 "}>
               <form phx-submit="submit">
                 <textarea
                   id="content"
