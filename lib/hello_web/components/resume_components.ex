@@ -1,6 +1,7 @@
 defmodule HelloWeb.ResumeComponents do
   use Phoenix.Component
   use Gettext, backend: HelloWeb.Gettext
+  use HelloWeb, :html
 
   attr :title, :string, required: true
   attr :content, :string, required: true
@@ -34,7 +35,10 @@ defmodule HelloWeb.ResumeComponents do
   def resume_sidebar_info(assigns) do
     ~H"""
     <div>
-      <div class="text-3xl font-bold">{@name}</div>
+      <.link navigate={~p"/"} class="text-3xl font-bold">
+        {@name}
+      </.link>
+
       <div class="mb-8">{@email}</div>
       <div>
         {@introduction}
