@@ -80,22 +80,20 @@ defmodule HelloWeb.TailwindLive.Demo04 do
             <div class="absolute top-0 left-0 text-lg font-bold rounded px-4 py-1 transform -translate-x-2 -translate-y-2">
               Education
             </div>
-            <div class="space-y-4">
-              <div>
-                <div class="font-bold">Otago</div>
-                <div>Good student</div>
+            <div class="space-y-2">
+              <div class="flex items-center divide-x divide-gray-300">
+                <div class="font-semibold pr-3">University of Otago</div>
+                <div class="flex pl-3 space-x-3">
+                  <div class="text-sm font-medium italic">Computer Science, MASc</div>
+                  <div class="text-sm font-light">2016 - 2018</div>
+                </div>
               </div>
-              <div>
-                <div class="font-bold">Otago</div>
-                <div>Good student</div>
-              </div>
-              <div>
-                <div class="font-bold">Otago</div>
-                <div>Good student</div>
-              </div>
-              <div>
-                <div class="font-bold">Otago</div>
-                <div>Good student</div>
+              <div class="flex items-center divide-x divide-gray-300">
+                <div class="font-semibold pr-3">Beijing University and Technology</div>
+                <div class="flex pl-3 space-x-3">
+                  <div class="text-sm font-medium italic">Computer Science, BS</div>
+                  <div class="text-sm font-light">2004 - 2009</div>
+                </div>
               </div>
             </div>
           </div>
