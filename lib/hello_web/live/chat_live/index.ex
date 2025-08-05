@@ -53,14 +53,29 @@ defmodule HelloWeb.ChatLive.Index do
         
     <!-- Sidebar Content (only visible when open) -->
         <div :if={@sidebar_open} class="space-y-1">
-          <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
+          <div
+            class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded text-sm"
+            phx-click="new_chat"
+          >
             <.icon name="hero-pencil-square" />
-            <span>new chat</span>
+            <span>New chat</span>
           </div>
+
           <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
             <.icon name="hero-magnifying-glass" />
-            <span>search</span>
+            <form action="">
+              <input
+                type="text"
+                placeholder="Search"
+                class="bg-transparent w-full outline-none text-sm text-gray-700 placeholder-gray-500"
+                phx-debounce="500ms"
+                phx-change="search"
+                name="query"
+                value=""
+              />
+            </form>
           </div>
+
           <div class="text-gray-400 font-bold mt-2 text-sm">
             History
           </div>
@@ -131,6 +146,17 @@ defmodule HelloWeb.ChatLive.Index do
   @impl true
   def handle_event("toggle_sidebar", _, socket) do
     {:noreply, update(socket, :sidebar_open, &(!&1))}
+  end
+
+  @impl true
+  def handle_event("new_chat", _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/chats")}
+  end
+
+  @impl true
+  def handle_event("search", %{"query" => text}, socket) do
+    Logger.info("->> todo: search -- #{text}")
+    {:noreply, socket}
   end
 
   def render_messages(assigns) do
