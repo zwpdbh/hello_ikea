@@ -1,5 +1,6 @@
 defmodule HelloWeb.TailwindLive.Demo06 do
   use HelloWeb, :live_view
+  import HelloWeb.Layouts
 
   @impl true
   def mount(_params, _session, socket) do
@@ -18,6 +19,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
   @impl true
   def render(assigns) do
     ~H"""
+    <.app_header {assigns}></.app_header>
     <div class="h-screen bg-white flex">
       <!-- Sidebar -->
       <div class={
