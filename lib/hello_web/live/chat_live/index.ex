@@ -21,6 +21,7 @@ defmodule HelloWeb.ChatLive.Index do
         # %{role: "user", from: "User02", content: "It is fine", style: "other"}
       ])
       |> assign(:conversations, [%{title: "this is fake one "}])
+      |> assign(:current_conversation_id, nil)
       |> assign(:can_submit, false)
 
     {:ok, socket}
@@ -134,7 +135,14 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("submit", %{"content" => ""}, socket) do
-    {:noreply, socket}
+    case socket.assigns.current_conversation_id do
+      nil ->
+        {:noreply, socket}
+
+      id ->
+        #
+        {:noreply, socket}
+    end
   end
 
   @impl true
