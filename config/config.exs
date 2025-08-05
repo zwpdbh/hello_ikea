@@ -91,9 +91,9 @@ config :esbuild,
   version: "0.17.11",
   hello: [
     args:
-      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/*),
+      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
 # Configure tailwind (the version is required)
@@ -114,6 +114,40 @@ config :logger, :default_formatter,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :venomous, :snake_manager, %{
+  # TTL whenever python process is inactive. Default: 15
+  snake_ttl_minutes: 10,
+  # Number of python workers that don't get cleared by SnakeManager when their TTL while inactive ends. Default: 10
+  perpetual_workers: 1,
+  # Interval for killing python processes past their ttl while inactive. Default: 60_000ms (1 min)
+  cleaner_interval: 5_000,
+  # reload module for hot reloading.
+  # default is already provided inside venomous python/ directory
+  reload_module: :reload,
+
+  # Erlport python options
+  python_opts: [
+    module_paths: ["priv/python"],
+    python_executable: "/usr/bin/python3",
+    envvars: [
+      TRANSFORMERS_CACHE: "/your/hf/cache"
+    ]
+  ]
+}
+
+config :venomous, :serpent_watcher, [
+  # Defaults to false
+  enable: true,
+  # log every hot reload. Default: true
+  logging: true,
+  # Provided by default
+  module: :serpent_watcher,
+  # Provided by default
+  func: :watch_directories,
+  # Provided by default
+  manager_pid: Venomous.SnakeManager
+]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

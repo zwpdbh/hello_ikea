@@ -1,7 +1,4 @@
-# Different from ChatOpenaiLive, it is chat with local LLM
-defmodule HelloWeb.ChatLive.Index do
-  require Logger
-
+defmodule HelloWeb.TailwindLive.Demo06 do
   use HelloWeb, :live_view
   import HelloWeb.Layouts
 
@@ -11,11 +8,10 @@ defmodule HelloWeb.ChatLive.Index do
       socket
       |> assign(:sidebar_open, true)
       |> assign(:messages, [
-        # %{role: "assistant", from: "Bot", content: "This is cool!", style: "bot"},
-        # %{role: "user", from: "You", content: "I am noob", style: "current"},
-        # %{role: "user", from: "User02", content: "It is fine", style: "other"}
+        %{role: "assistant", from: "Bot", content: "This is cool!", style: "bot"},
+        %{role: "user", from: "You", content: "I am noob", style: "current"},
+        %{role: "user", from: "User02", content: "It is fine", style: "other"}
       ])
-      |> assign(:can_submit, false)
 
     {:ok, socket}
   end
@@ -77,24 +73,16 @@ defmodule HelloWeb.ChatLive.Index do
               </div>
             <% end %>
 
-            <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4", else: "rounded-2xl p-4"}>
-              <form phx-submit="submit" phx-change="validate" class="relative">
+            <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4 ", else: "rounded-2xl p-4 "}>
+              <form phx-submit="submit">
                 <textarea
                   id="content"
                   phx-hook="SubmitOnCmdEnter"
                   name="content"
-                  class="block resize-none w-full rounded-2xl bg-gray-100 p-4 pr-12 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+                  class="block resize-none w-full rounded-2xl bg-gray-100 p-4 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
                   placeholder="Enter a message..."
                   rows="6"
-                  phx-change="validate"
                 />
-                <button
-                  type="submit"
-                  class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
-                  disabled={!@can_submit}
-                >
-                  <.icon name="hero-paper-airplane" class="w-5 h-5 rotate-45" />
-                </button>
               </form>
             </div>
           </div>
@@ -102,24 +90,6 @@ defmodule HelloWeb.ChatLive.Index do
       </div>
     </div>
     """
-  end
-
-  @impl true
-  def handle_event("validate", %{"content" => content}, socket) do
-    can_submit = content != "" and String.trim(content) != ""
-
-    {:noreply, assign(socket, :can_submit, can_submit)}
-  end
-
-  @impl true
-  def handle_event("submit", %{"content" => ""}, socket) do
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("submit", %{"content" => content}, socket) do
-    Logger.info("->> user: #{inspect(socket.assigns.current_user)}, submit: #{content}")
-    {:noreply, socket}
   end
 
   @impl true

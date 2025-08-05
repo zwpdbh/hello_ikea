@@ -11,25 +11,9 @@ defmodule HelloWeb.Layouts do
 
   embed_templates "layouts/*"
 
-  @doc """
-  Renders the app layout
-
-  ## Examples
-
-      <Layouts.app flash={@flash}>
-        <h1>Content</h1>
-      </Layout.app>
-
-  """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-
-  attr :current_scope, :map,
-    default: nil,
-    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
-
   slot :inner_block, required: true
 
-  def app(assigns) do
+  def app_header(assigns) do
     ~H"""
     <header class="navbar px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
@@ -58,12 +42,43 @@ defmodule HelloWeb.Layouts do
               bumblebee
             </.link>
           </li>
+
+          <li>
+            <.link navigate={~p"/tailwind"} class="font-semibold text-gray-700 hover:text-gray-900">
+              tailwind
+            </.link>
+          </li>
+
           <li>
             <.user_info current_user={@current_user} socket={@socket} />
           </li>
         </ul>
       </div>
     </header>
+    """
+  end
+
+  @doc """
+  Renders the app layout
+
+  ## Examples
+
+      <Layouts.app flash={@flash}>
+        <h1>Content</h1>
+      </Layout.app>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+
+  attr :current_scope, :map,
+    default: nil,
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
+  slot :inner_block, required: false
+
+  def app(assigns) do
+    ~H"""
+    <.app_header {assigns}></.app_header>
 
     <main class="px-4 py-20 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">

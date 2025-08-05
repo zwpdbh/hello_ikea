@@ -1,11 +1,15 @@
 defmodule Hello.Chat.Message do
   use Ash.Resource,
     domain: Hello.Chat,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "messages"
     repo Hello.Repo
+  end
+
+  policies do
   end
 
   attributes do
@@ -15,14 +19,28 @@ defmodule Hello.Chat.Message do
       allow_nil? false
     end
 
-    attribute :sender, :string do
+    attribute :sender_type, :atom do
       allow_nil? false
+      constraints one_of: [:user, :bot, :system]
+    end
+
+    attribute :sender_id, :uuid do
+      allow_nil? true
     end
 
     timestamps()
   end
 
   relationships do
-    belongs_to :conversation, Hello.Chat.Conversation
+    belongs_to :conversation, Hello.Chat.Conversation do
+      public? true
+      allow_nil? false
+    end
+
+    belongs_to :user, Hello.Accounts.User do
+      public? true
+      allow_nil? true
+      source_attribute :sender_id
+    end
   end
 end

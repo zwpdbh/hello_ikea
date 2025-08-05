@@ -5,7 +5,7 @@ defmodule Hello.LLMProvider.ChatClient do
   This module allows sending prompts to an LLM endpoint, supporting both standard
   (non-streaming) and streaming responses. It uses the `Req` library to perform HTTP
   requests and expects the configuration (e.g., endpoint, API key, model) to be provided
-  by `Hello.LLMProvider.Config`.
+  by `Hello.LLMProvider.Setting`.
 
   ## Examples
 
@@ -19,8 +19,8 @@ defmodule Hello.LLMProvider.ChatClient do
   """
   require Logger
 
-  def endpoint, do: Hello.LLMProvider.Config.get().chat_endpoint
-  def api_key, do: Hello.LLMProvider.Config.get().api_key
+  def endpoint, do: Hello.LLMProvider.Setting.get().chat_endpoint
+  def api_key, do: Hello.LLMProvider.Setting.get().api_key
 
   defp headers do
     [
@@ -147,7 +147,7 @@ defmodule Hello.LLMProvider.ChatClient.Playground do
       "messages" => [
         %{"content" => "what is the capital of France?", "role" => "user"}
       ],
-      "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
+      "model" => "#{Hello.LLMProvider.Setting.get().chat_model}",
       "temperature" => 1
     })
   end
@@ -158,7 +158,7 @@ defmodule Hello.LLMProvider.ChatClient.Playground do
         "messages" => [
           %{"content" => "tell me a story in 10 words", "role" => "user"}
         ],
-        "model" => "#{Hello.LLMProvider.Config.get().chat_model}",
+        "model" => "#{Hello.LLMProvider.Setting.get().chat_model}",
         "temperature" => 1
       },
       stream: fn x -> Logger.info(x) end
@@ -174,7 +174,7 @@ defmodule Hello.LLMProvider.ChatClient.Playground do
     content_type = "content-type: application/json"
     data = ~s({
       "request": {
-        "model": "#{Hello.LLMProvider.Config.get().chat_model}",
+        "model": "#{Hello.LLMProvider.Setting.get().chat_model}",
         "temperature": 1,
         "messages": [
           {
