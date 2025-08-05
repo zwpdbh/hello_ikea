@@ -8,9 +8,9 @@ defmodule HelloWeb.TailwindLive.Demo06 do
       socket
       |> assign(:sidebar_open, true)
       |> assign(:messages, [
-        %{from: "bot", content: "this is cool"},
-        %{from: "user01", content: "I am noob"},
-        %{from: "user02", content: "It is fine"}
+        %{role: "assistant", from: "Bot", content: "This is cool!", style: "bot"},
+        %{role: "user", from: "You", content: "I am noob", style: "current"},
+        %{role: "user", from: "User02", content: "It is fine", style: "other"}
       ])
 
     {:ok, socket}
@@ -99,12 +99,38 @@ defmodule HelloWeb.TailwindLive.Demo06 do
 
   def render_messages(assigns) do
     ~H"""
-    <%= for %{from: from, content: content} <- @messages do %>
-      <div class="flex">
-        <div>from: {from}</div>
-        <div>content: {content}</div>
-      </div>
-    <% end %>
+    <div class="space-y-3">
+      <%= for msg <- @messages do %>
+        <div class={
+            "flex gap-2 " <>
+            if(msg.style == "current", do: "justify-end", else: "justify-start")
+          }>
+          <%= if msg.style != "current" do %>
+            <div class="flex-shrink-0 w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+              {String.first(msg.from)}
+            </div>
+          <% end %>
+
+          <div class={
+              "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm " <>
+              case msg.style do
+                "current" -> "bg-blue-500 text-white rounded-tr-none"
+                "other" -> "bg-gray-300 text-gray-800 rounded-tl-none"
+                "bot" -> "bg-green-500 text-white rounded-tl-none"
+                _ -> "bg-gray-200"
+              end
+            }>
+            <p>{msg.content}</p>
+          </div>
+
+          <%= if msg.style == "bot" do %>
+            <div class="flex-shrink-0 ml-1">
+              <.icon name="hero-cog-6-tooth" class="w-5 h-5 text-gray-500" />
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
     """
   end
 end
