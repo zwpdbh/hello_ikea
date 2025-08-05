@@ -13,6 +13,7 @@ defmodule Hello.Chat.Conversation do
 
     attribute :title, :string do
       public? true
+      allow_nil? true
     end
 
     timestamps()

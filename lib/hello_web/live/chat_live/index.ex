@@ -9,6 +9,9 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    # 1. during mount what should I do ?
+    # 2. when to create current conversation ?
+
     socket =
       socket
       |> assign(:sidebar_open, true)
@@ -17,6 +20,7 @@ defmodule HelloWeb.ChatLive.Index do
         # %{role: "user", from: "You", content: "I am noob", style: "current"},
         # %{role: "user", from: "User02", content: "It is fine", style: "other"}
       ])
+      |> assign(:conversations, [%{title: "this is fake one "}])
       |> assign(:can_submit, false)
 
     {:ok, socket}
@@ -60,9 +64,9 @@ defmodule HelloWeb.ChatLive.Index do
           <div class="text-gray-400 font-bold mt-2 text-sm">
             History
           </div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 01</div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 02</div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 03</div>
+          <%= for each_conversation <- @conversations do %>
+            <div class="hover:bg-gray-200 p-1 rounded">{each_conversation.title}</div>
+          <% end %>
         </div>
       </div>
 
