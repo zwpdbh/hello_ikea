@@ -26,7 +26,7 @@ defmodule HelloWeb.Layouts do
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
             <.link navigate={~p"/chats"} class="font-semibold text-gray-700 hover:text-gray-900">
-              chat_bumblebee
+              chat
             </.link>
           </li>
           <li>

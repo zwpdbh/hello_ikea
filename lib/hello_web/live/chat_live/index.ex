@@ -5,6 +5,8 @@ defmodule HelloWeb.ChatLive.Index do
   use HelloWeb, :live_view
   import HelloWeb.Layouts
 
+  on_mount {HelloWeb.LiveUserAuth, :live_user_required}
+
   @impl true
   def mount(_params, _session, socket) do
     socket =
