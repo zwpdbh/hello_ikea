@@ -1,14 +1,21 @@
 # Different from ChatOpenaiLive, it is chat with local LLM
 defmodule HelloWeb.ChatLive.Index do
   require Logger
+
   use HelloWeb, :live_view
+  import HelloWeb.Layouts
 
   @impl true
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:messages, [])
-      |> assign(:running, false)
+      |> assign(:sidebar_open, true)
+      |> assign(:messages, [
+        # %{role: "assistant", from: "Bot", content: "This is cool!", style: "bot"},
+        # %{role: "user", from: "You", content: "I am noob", style: "current"},
+        # %{role: "user", from: "User02", content: "It is fine", style: "other"}
+      ])
+      |> assign(:can_submit, false)
 
     {:ok, socket}
   end
@@ -16,169 +23,144 @@ defmodule HelloWeb.ChatLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app {assigns}>
-      <div class="h-screen h-full w-full max-w-3xl flex flex-col mx-auto bg-gray-50 drop-shadow text-gray-700">
-        <ol class="grow flex flex-col-reverse overflow-y-auto">
-          <li
-            :for={message <- @messages}
-            class="p-4 flex items-start space-x-4 border-b first:border-b-0 hover:bg-gray-200 transition-colors"
-          >
-            <div class="shrink-0 pt-0.5 opacity-75">
-              <svg
-                :if={message.role == :assistant}
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"
-                  fill="currentColor"
-                />
-              </svg>
-              <svg
-                :if={message.role == :user}
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-              </svg>
-            </div>
-            <div class="leading-7 whitespace-pre-wrap">{message.content}</div>
-          </li>
-          <li class="h-full hidden only:flex items-center justify-center">
-            No messages. Enter a message below to begin.
-          </li>
-        </ol>
-        <div class="shrink-0 w-full">
-          <form phx-submit="submit" class="border-t border-gray-200 p-4 space-y-2">
-            <textarea
-              id="content"
-              phx-hook="SubmitOnCmdEnter"
-              name="content"
-              class="block resize-none w-full border-gray-200 rounded bg-white focus:ring-0 focus:border-gray-300 focus:shadow-sm"
-              placeholder="Enter a message..."
-              rows={4}
-            ></textarea>
-            <div class="flex justify-end">
-              <button
-                disabled={@running}
-                class="bg-gray-200 hover:bg-gray-300 transition px-3 py-1.5 rounded flex items-center justify-center"
-              >
-                Send
-              </button>
-            </div>
-          </form>
+    <.app_header {assigns}></.app_header>
+    <div class="h-screen bg-white flex">
+      <!-- Sidebar -->
+      <div class={
+          "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
+          if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")
+        }>
+        <!-- Toggle Button -->
+        <div class="flex justify-end">
+          <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
+            <.icon
+              name={
+                if(@sidebar_open,
+                  do: "hero-arrow-left-end-on-rectangle",
+                  else: "hero-arrow-right-end-on-rectangle"
+                )
+              }
+              class="w-6 h-6"
+            />
+          </button>
+        </div>
+        
+    <!-- Sidebar Content (only visible when open) -->
+        <div :if={@sidebar_open} class="space-y-1">
+          <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
+            <.icon name="hero-pencil-square" />
+            <span>new chat</span>
+          </div>
+          <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
+            <.icon name="hero-magnifying-glass" />
+            <span>search</span>
+          </div>
+          <div class="text-gray-400 font-bold mt-2 text-sm">
+            History
+          </div>
+          <div class="hover:bg-gray-200 p-1 rounded">chat history 01</div>
+          <div class="hover:bg-gray-200 p-1 rounded">chat history 02</div>
+          <div class="hover:bg-gray-200 p-1 rounded">chat history 03</div>
         </div>
       </div>
-    </Layouts.app>
+
+      <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
+        <div class="p-4 flex-1 flex ">
+          <div class={
+            if @messages == [],
+              do: "flex-1 flex items-center justify-center",
+              else: "flex-1 flex flex-col"
+          }>
+            <%= if @messages != [] do %>
+              <div class="flex-1 overflow-y-auto rounded-lg p-2 mb-4">
+                <.render_messages messages={@messages} />
+              </div>
+            <% end %>
+
+            <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4", else: "rounded-2xl p-4"}>
+              <form phx-submit="submit" phx-change="validate" class="relative">
+                <textarea
+                  id="content"
+                  phx-hook="SubmitOnCmdEnter"
+                  name="content"
+                  class="block resize-none w-full rounded-2xl bg-gray-100 p-4 pr-12 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+                  placeholder="Enter a message..."
+                  rows="6"
+                  phx-change="validate"
+                />
+                <button
+                  type="submit"
+                  class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
+                  disabled={!@can_submit}
+                >
+                  <.icon name="hero-paper-airplane" class="w-5 h-5 rotate-45" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     """
   end
 
   @impl true
-  def handle_event("submit", %{"content" => content}, socket) do
-    message = %{role: :user, content: content}
-    updated_messages = [message | socket.assigns.messages]
+  def handle_event("validate", %{"content" => content}, socket) do
+    can_submit = content != "" and String.trim(content) != ""
 
-    pid = self()
+    {:noreply, assign(socket, :can_submit, can_submit)}
+  end
 
-    socket =
-      socket
-      |> assign(:messages, updated_messages)
-      |> assign(:running, true)
-      |> start_async(:chat_completion, fn ->
-        run_chat_completion(pid, updated_messages)
-      end)
-
+  @impl true
+  def handle_event("submit", %{"content" => ""}, socket) do
     {:noreply, socket}
   end
 
   @impl true
-  def handle_info({:chunk, chunk}, socket) do
-    updated_messages =
-      case socket.assigns.messages do
-        [%{role: :assistant, content: content} | messages] ->
-          [%{role: :assistant, content: content <> chunk} | messages]
-
-        messages ->
-          [%{role: :assistant, content: chunk} | messages]
-      end
-
-    {:noreply, assign(socket, :messages, updated_messages)}
+  def handle_event("submit", %{"content" => content}, socket) do
+    Logger.info("->> user: #{inspect(socket.assigns.current_user)}, submit: #{content}")
+    {:noreply, socket}
   end
 
   @impl true
-  def handle_async(:chat_completion, _result, socket) do
-    {:noreply, assign(socket, :running, false)}
+  def handle_event("toggle_sidebar", _, socket) do
+    {:noreply, update(socket, :sidebar_open, &(!&1))}
   end
 
-  defp add_context([%{role: :user, content: message_content} | rest] = _messages) do
-    {:ok, sections} = Hello.Rag.search_section(%{query: message_content})
+  def render_messages(assigns) do
+    ~H"""
+    <div class="space-y-3">
+      <%= for msg <- @messages do %>
+        <div class={
+            "flex gap-2 " <>
+            if(msg.style == "current", do: "justify-end", else: "justify-start")
+          }>
+          <%= if msg.style != "current" do %>
+            <div class="flex-shrink-0 w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+              {String.first(msg.from)}
+            </div>
+          <% end %>
 
-    context =
-      sections
-      |> Enum.map(fn %Hello.Rag.Section{chunk: chunk} ->
-        """
-        [...]
-        #{chunk}
-        [...]
-        """
-      end)
-      |> Enum.join("\n\n")
+          <div class={
+              "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm " <>
+              case msg.style do
+                "current" -> "bg-blue-500 text-white rounded-tr-none"
+                "other" -> "bg-gray-300 text-gray-800 rounded-tl-none"
+                "bot" -> "bg-green-500 text-white rounded-tl-none"
+                _ -> "bg-gray-200"
+              end
+            }>
+            <p>{msg.content}</p>
+          </div>
 
-    updated_message_with_context =
-      """
-      Please use following context
-      ---------------------
-      #{context}
-      ---------------------
-      Question: #{message_content}
-      """
-
-    [%{role: :user, content: updated_message_with_context} | rest]
+          <%= if msg.style == "bot" do %>
+            <div class="flex-shrink-0 ml-1">
+              <.icon name="hero-cog-6-tooth" class="w-5 h-5 text-gray-500" />
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    """
   end
-
-  defp run_chat_completion(pid, messages) do
-    updated_messages = add_context(messages)
-
-    request = %{
-      model: "#{Hello.LLMProvider.Setting.get().chat_model}",
-      temperature: 1,
-      messages: updated_messages
-    }
-
-    Hello.LLMProvider.ChatClient.chat(request,
-      stream: fn chunk ->
-        case chunk do
-          %{"choices" => [%{"delta" => %{"content" => content}}]} ->
-            send(pid, {:chunk, content})
-
-          _ ->
-            nil
-        end
-      end
-    )
-  end
-
-  # defp run_chat_completion(pid, [
-  #        %{role: :user, content: query} = _new_message | _message_history
-  #      ]) do
-  #   # Example: what should I do to implement rag in elixir?
-  #   Hello.Rag.Generator.generate_response_stream(query,
-  #     stream: fn
-  #       :done ->
-  #         Logger.info("Stream finished")
-
-  #       chunk ->
-  #         send(pid, {:chunk, chunk})
-  #     end
-  #   )
-  # end
 end
