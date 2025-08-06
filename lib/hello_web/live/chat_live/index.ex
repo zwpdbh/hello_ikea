@@ -48,7 +48,7 @@ defmodule HelloWeb.ChatLive.Index do
         </div>
         
     <!-- Sidebar Content (only visible when open) -->
-        <div :if={@sidebar_open} class="space-y-1">
+        <div :if={@sidebar_open} class="flex flex-col h-full">
           <div
             class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded text-sm"
             phx-click="new_chat"
@@ -75,10 +75,11 @@ defmodule HelloWeb.ChatLive.Index do
           <div class="text-gray-400 font-bold mt-2 text-sm">
             History
           </div>
-
-          <%= if @conversations != [] do %>
-            <.render_histories conversations={@conversations} />
-          <% end %>
+          <div class="flex-1 overflow-y-auto px-1 space-y-1">
+            <%= if @conversations != [] do %>
+              <.render_histories conversations={@conversations} />
+            <% end %>
+          </div>
         </div>
       </div>
 
