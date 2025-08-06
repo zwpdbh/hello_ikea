@@ -9,7 +9,15 @@ defmodule Hello.Chat.Conversation do
   end
 
   actions do
+    defaults [:read]
+
+    read :my_conversations do
+      filter expr(user_id == ^actor(:id))
+    end
+
     create :create do
+      accept [:title]
+      change relate_actor(:user)
     end
 
     update :update do
