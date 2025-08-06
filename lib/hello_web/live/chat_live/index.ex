@@ -100,7 +100,7 @@ defmodule HelloWeb.ChatLive.Index do
             <% end %>
 
             <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4", else: "rounded-2xl p-4"}>
-              <form phx-submit="submit" phx-change="validate" class="relative">
+              <form phx-submit="send_message" phx-change="validate" class="relative">
                 <textarea
                   id="content"
                   phx-hook="SubmitOnCmdEnter"
@@ -134,21 +134,30 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("submit", %{"content" => ""}, socket) do
-    case socket.assigns.current_conversation_id do
-      nil ->
-        {:noreply, socket}
-
-      id ->
-        #
-        {:noreply, socket}
-    end
+  # it is used to handle user submit empty content
+  def handle_event("send_message", %{"content" => ""}, socket) do
+    {:noreply, socket}
   end
 
   @impl true
-  def handle_event("submit", %{"content" => content}, socket) do
-    Logger.info("->> user: #{inspect(socket.assigns.current_user)}, submit: #{content}")
-    {:noreply, socket}
+  def handle_event("send_message", %{"content" => content}, socket) do
+    case Hello.Chat.create_message(%{
+           content: content,
+           sender_type: :user,
+           sender_id: socket.assigns.current_user.id
+         }) do
+      {:ok, message} ->
+        socket =
+          socket
+          |> assign(:messages, [message] ++ socket.assigns.messages)
+
+        {:noreply, socket}
+
+      {:error, reason} ->
+        reason |> dbg()
+        socket = put_flash(socket, :error, "Failed to send message: #{inspect(reason)}")
+        {:noreply, socket}
+    end
   end
 
   @impl true

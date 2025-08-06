@@ -8,6 +8,15 @@ defmodule Hello.Chat.Conversation do
     repo Hello.Repo
   end
 
+  actions do
+    create :create do
+    end
+
+    update :update do
+      accept [:title]
+    end
+  end
+
   attributes do
     uuid_primary_key :id
 
