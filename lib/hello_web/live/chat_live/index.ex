@@ -27,13 +27,9 @@ defmodule HelloWeb.ChatLive.Index do
     ~H"""
     <div class="flex flex-col h-screen">
       <.app_header {assigns}></.app_header>
-      <div class="bg-white flex flex-1  overflow-hidden">
-        <!-- Sidebar -->
-        <div class={
-          "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
-          if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")
-        }>
-          <!-- Toggle Button -->
+
+      <div class="bg-white flex flex-1 overflow-hidden">
+        <div class={"transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <> if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")}>
           <div class="flex justify-end">
             <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
               <.icon

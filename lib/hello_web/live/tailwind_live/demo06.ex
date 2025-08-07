@@ -32,11 +32,8 @@ defmodule HelloWeb.TailwindLive.Demo06 do
     <div class="flex flex-col h-screen bg-orange-200">
       <.app_header {assigns}></.app_header>
 
-      <div class="bg-white flex flex-1 bg-teal-200 overflow-hidden">
-        <div class={
-          "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
-          if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")
-        }>
+      <div class="bg-white flex flex-1 overflow-hidden">
+        <div class={"transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 h-full " <> if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")}>
           <div class="flex justify-end">
             <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
               <.icon
@@ -51,7 +48,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
             </button>
           </div>
 
-          <div :if={@sidebar_open} class="space-y-1 ">
+          <div :if={@sidebar_open} class="flex-1 flex flex-col space-y-1 overflow-hidden">
             <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
               <.icon name="hero-pencil-square" />
               <span>new chat</span>
@@ -60,13 +57,16 @@ defmodule HelloWeb.TailwindLive.Demo06 do
               <.icon name="hero-magnifying-glass" />
               <span>search</span>
             </div>
+
             <div class="text-gray-400 font-bold mt-2 text-sm">
               History
             </div>
 
-            <div class="flex-1 overflow-y-auto h-1/2">
+            <div class="flex-1 overflow-y-auto space-y-1">
               <%= for each_history <- @histories do %>
-                <div class="hover:bg-gray-200 p-1 rounded">{each_history}</div>
+                <div class="hover:bg-gray-200 p-1 rounded truncate">
+                  {each_history}
+                </div>
               <% end %>
             </div>
           </div>
