@@ -44,7 +44,7 @@ defmodule HelloWeb.ChatLive.Index do
             </button>
           </div>
 
-          <div :if={@sidebar_open} class="space-y-1">
+          <div :if={@sidebar_open} class="flex-1 flex flex-col space-y-1 overflow-hidden">
             <div
               class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded text-sm"
               phx-click="new_chat"
@@ -72,7 +72,7 @@ defmodule HelloWeb.ChatLive.Index do
               History
             </div>
             <%= if @conversations != [] do %>
-              <div class="flex flex-col flex-1  overflow-y-auto space-y-1 h-12/20">
+              <div class="flex flex-1 flex-col overflow-y-auto space-y-1 ">
                 <.render_histories conversations={@conversations} />
               </div>
             <% end %>
@@ -137,7 +137,15 @@ defmodule HelloWeb.ChatLive.Index do
   def render_histories(assigns) do
     ~H"""
     <%= for each_conversation <- @conversations do %>
-      <div class="hover:bg-gray-200 p-1 rounded">{each_conversation.id}</div>
+      <%= if each_conversation.title do %>
+        <.link class="hover:bg-gray-200 p-1 rounded" href={~p"/chats/#{each_conversation.id}"}>
+          {each_conversation.title}
+        </.link>
+      <% else %>
+        <.link class="hover:bg-gray-200 p-1 rounded" href={~p"/chats/#{each_conversation.id}"}>
+          {each_conversation.id}
+        </.link>
+      <% end %>
     <% end %>
     """
   end

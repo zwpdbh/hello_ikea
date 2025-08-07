@@ -29,7 +29,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-screen bg-orange-200">
+    <div class="flex flex-col h-screen">
       <.app_header {assigns}></.app_header>
 
       <div class="bg-white flex flex-1 overflow-hidden">
