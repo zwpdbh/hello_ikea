@@ -8,11 +8,29 @@ defmodule Hello.Chat.Conversation do
     repo Hello.Repo
   end
 
+  actions do
+    defaults [:read]
+
+    read :my_conversations do
+      filter expr(user_id == ^actor(:id))
+    end
+
+    create :create do
+      accept [:title]
+      change relate_actor(:user)
+    end
+
+    update :update do
+      accept [:title]
+    end
+  end
+
   attributes do
     uuid_primary_key :id
 
     attribute :title, :string do
       public? true
+      allow_nil? true
     end
 
     timestamps()

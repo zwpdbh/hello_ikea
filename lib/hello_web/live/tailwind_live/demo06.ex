@@ -4,14 +4,24 @@ defmodule HelloWeb.TailwindLive.Demo06 do
 
   @impl true
   def mount(_params, _session, socket) do
-    socket =
-      socket
-      |> assign(:sidebar_open, true)
-      |> assign(:messages, [
+    messages =
+      [
         %{role: "assistant", from: "Bot", content: "This is cool!", style: "bot"},
         %{role: "user", from: "You", content: "I am noob", style: "current"},
         %{role: "user", from: "User02", content: "It is fine", style: "other"}
-      ])
+      ]
+      |> List.duplicate(20)
+      |> List.flatten()
+
+    histories =
+      1..60
+      |> Enum.map(fn x -> "chat history #{x}" end)
+
+    socket =
+      socket
+      |> assign(:sidebar_open, true)
+      |> assign(:messages, messages)
+      |> assign(:histories, histories)
 
     {:ok, socket}
   end
@@ -19,72 +29,84 @@ defmodule HelloWeb.TailwindLive.Demo06 do
   @impl true
   def render(assigns) do
     ~H"""
-    <.app_header {assigns}></.app_header>
-    <div class="h-screen bg-white flex">
-      <!-- Sidebar -->
-      <div class={
-          "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
-          if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")
-        }>
-        <!-- Toggle Button -->
-        <div class="flex justify-end">
-          <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
-            <.icon
-              name={
-                if(@sidebar_open,
-                  do: "hero-arrow-left-end-on-rectangle",
-                  else: "hero-arrow-right-end-on-rectangle"
-                )
-              }
-              class="w-6 h-6"
-            />
-          </button>
-        </div>
-        
-    <!-- Sidebar Content (only visible when open) -->
-        <div :if={@sidebar_open} class="space-y-1">
-          <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
-            <.icon name="hero-pencil-square" />
-            <span>new chat</span>
-          </div>
-          <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
-            <.icon name="hero-magnifying-glass" />
-            <span>search</span>
-          </div>
-          <div class="text-gray-400 font-bold mt-2 text-sm">
-            History
-          </div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 01</div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 02</div>
-          <div class="hover:bg-gray-200 p-1 rounded">chat history 03</div>
-        </div>
-      </div>
+    <div class="flex flex-col h-screen">
+      <.app_header {assigns}></.app_header>
 
-      <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
-        <div class="p-4 flex-1 flex ">
-          <div class={
-            if @messages == [],
-              do: "flex-1 flex items-center justify-center",
-              else: "flex-1 flex flex-col"
-          }>
-            <%= if @messages != [] do %>
-              <div class="flex-1 overflow-y-auto rounded-lg p-2 mb-4">
+      <div class="bg-white flex flex-1 overflow-hidden">
+        <div class={"transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 h-full " <> if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")}>
+          <div class="flex justify-end">
+            <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
+              <.icon
+                name={
+                  if(@sidebar_open,
+                    do: "hero-arrow-left-end-on-rectangle",
+                    else: "hero-arrow-right-end-on-rectangle"
+                  )
+                }
+                class="w-6 h-6"
+              />
+            </button>
+          </div>
+
+          <div :if={@sidebar_open} class="flex-1 flex flex-col space-y-1 overflow-hidden">
+            <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
+              <.icon name="hero-pencil-square" />
+              <span>new chat</span>
+            </div>
+            <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
+              <.icon name="hero-magnifying-glass" />
+              <span>search</span>
+            </div>
+
+            <div class="text-gray-400 font-bold mt-2 text-sm">
+              History
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-1">
+              <%= for each_history <- @histories do %>
+                <div class="hover:bg-gray-200 p-1 rounded truncate">
+                  {each_history}
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-1 flex-col bg-gray-50 overflow-hidden">
+          <div class="p-4 flex flex-col flex-1 overflow-hidden">
+            <%= if @messages == [] do %>
+              <div class="flex flex-1 items-center justify-center">
+                <div class="w-4/5 rounded-2xl p-4">
+                  <form phx-submit="submit">
+                    <textarea
+                      id="content"
+                      phx-hook="SubmitOnCmdEnter"
+                      name="content"
+                      class="block resize-none w-full rounded-2xl bg-gray-100 p-4 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+                      placeholder="Enter a message..."
+                      rows="6"
+                    />
+                  </form>
+                </div>
+              </div>
+            <% else %>
+              <div class="flex-1 overflow-y-auto rounded-lg bg-white p-2 mb-4">
                 <.render_messages messages={@messages} />
               </div>
-            <% end %>
 
-            <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4 ", else: "rounded-2xl p-4 "}>
-              <form phx-submit="submit">
-                <textarea
-                  id="content"
-                  phx-hook="SubmitOnCmdEnter"
-                  name="content"
-                  class="block resize-none w-full rounded-2xl bg-gray-100 p-4 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
-                  placeholder="Enter a message..."
-                  rows="6"
-                />
-              </form>
-            </div>
+              <div class="rounded-2xl p-4">
+                <form phx-submit="submit">
+                  <textarea
+                    id="content"
+                    phx-hook="SubmitOnCmdEnter"
+                    name="content"
+                    class="block resize-none w-full rounded-2xl bg-gray-100 p-4 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+                    placeholder="Enter a message..."
+                    rows="6"
+                  />
+                </form>
+              </div>
+            <% end %>
           </div>
         </div>
       </div>

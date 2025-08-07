@@ -2,7 +2,7 @@
 # FOR DEV LOCALLY
 # This will run livebook with db from docker-compose
 run_db:
-	UID=$(id -u) GID=$(id -g) docker compose -f docker-compose-for-dev.yaml up
+	UID=$(id -u) GID=$(id -g) docker compose -f docker-compose-for-dev.yaml up --remove-orphans
 	
 reset_db:
 	mix ecto.reset && MIX_ENV=test mix ecto.reset
