@@ -80,6 +80,7 @@ defmodule HelloWeb.ChatLive.Index do
             <div
               id="conversation-history-list"
               class="flex flex-1 flex-col overflow-y-auto space-y-1 "
+              phx-update="stream"
             >
               <.render_histories
                 conversations={@streams.conversations}
@@ -117,8 +118,9 @@ defmodule HelloWeb.ChatLive.Index do
 
   def render_histories(assigns) do
     ~H"""
-    <%= for {_id, each_conversation} <- @conversations do %>
+    <%= for {id, each_conversation} <- @conversations do %>
       <.link
+        id={id}
         class={
           if @current_conversation && each_conversation.id == @current_conversation.id do
             "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
