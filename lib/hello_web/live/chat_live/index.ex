@@ -73,7 +73,10 @@ defmodule HelloWeb.ChatLive.Index do
             </div>
             <%= if @conversations != [] do %>
               <div class="flex flex-1 flex-col overflow-y-auto space-y-1 ">
-                <.render_histories conversations={@conversations} />
+                <.render_histories
+                  conversations={@conversations}
+                  current_conversation={@conversation}
+                />
               </div>
             <% end %>
           </div>
@@ -137,15 +140,22 @@ defmodule HelloWeb.ChatLive.Index do
   def render_histories(assigns) do
     ~H"""
     <%= for each_conversation <- @conversations do %>
-      <%= if each_conversation.title do %>
-        <.link class="hover:bg-gray-200 p-1 rounded" href={~p"/chats/#{each_conversation.id}"}>
+      <.link
+        class={
+          if each_conversation.id == @current_conversation.id do
+            "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
+          else
+            "hover:bg-gray-200 p-1 rounded"
+          end
+        }
+        href={~p"/chats/#{each_conversation.id}"}
+      >
+        <%= if each_conversation.title do %>
           {each_conversation.title}
-        </.link>
-      <% else %>
-        <.link class="hover:bg-gray-200 p-1 rounded" href={~p"/chats/#{each_conversation.id}"}>
-          {each_conversation.id}
-        </.link>
-      <% end %>
+        <% else %>
+          {"Chat #{each_conversation.id}"}
+        <% end %>
+      </.link>
     <% end %>
     """
   end
