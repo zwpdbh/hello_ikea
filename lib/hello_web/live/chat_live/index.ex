@@ -72,7 +72,10 @@ defmodule HelloWeb.ChatLive.Index do
               History
             </div>
             <%= if @conversations != [] do %>
-              <div class="flex flex-1 flex-col overflow-y-auto space-y-1 ">
+              <div
+                id="conversation-history-list"
+                class="flex flex-1 flex-col overflow-y-auto space-y-1 "
+              >
                 <.render_histories
                   conversations={@conversations}
                   current_conversation={@conversation}
@@ -108,6 +111,29 @@ defmodule HelloWeb.ChatLive.Index do
     """
   end
 
+  def render_histories(assigns) do
+    ~H"""
+    <%= for each_conversation <- @conversations do %>
+      <.link
+        class={
+          if each_conversation.id == @current_conversation.id do
+            "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
+          else
+            "hover:bg-gray-200 p-1 rounded"
+          end
+        }
+        href={~p"/chats/#{each_conversation.id}"}
+      >
+        <%= if each_conversation.title do %>
+          {each_conversation.title}
+        <% else %>
+          {"Chat #{each_conversation.id}"}
+        <% end %>
+      </.link>
+    <% end %>
+    """
+  end
+
   def render_message_form(assigns) do
     ~H"""
     <.form
@@ -134,29 +160,6 @@ defmodule HelloWeb.ChatLive.Index do
         <.icon name="hero-paper-airplane" class="w-5 h-5 rotate-45" />
       </button>
     </.form>
-    """
-  end
-
-  def render_histories(assigns) do
-    ~H"""
-    <%= for each_conversation <- @conversations do %>
-      <.link
-        class={
-          if each_conversation.id == @current_conversation.id do
-            "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
-          else
-            "hover:bg-gray-200 p-1 rounded"
-          end
-        }
-        href={~p"/chats/#{each_conversation.id}"}
-      >
-        <%= if each_conversation.title do %>
-          {each_conversation.title}
-        <% else %>
-          {"Chat #{each_conversation.id}"}
-        <% end %>
-      </.link>
-    <% end %>
     """
   end
 
