@@ -15,7 +15,7 @@ defmodule HelloWeb.ChatLive.Index do
       socket
       |> assign(:sidebar_open, true)
       |> assign(:messages, [])
-      |> assign(:conversations, Hello.Chat.my_conversations!(actor: socket.assigns.current_user))
+      |> stream(:conversations, Hello.Chat.my_conversations!(actor: socket.assigns.current_user))
       |> assign(:current_user_id, socket.assigns.current_user.id)
       |> assign(:can_submit, false)
 
@@ -71,17 +71,18 @@ defmodule HelloWeb.ChatLive.Index do
             <div class="text-gray-400 font-bold mt-2 text-sm">
               History
             </div>
-            <%= if @conversations != [] do %>
-              <div
-                id="conversation-history-list"
-                class="flex flex-1 flex-col overflow-y-auto space-y-1 "
-              >
-                <.render_histories
-                  conversations={@conversations}
-                  current_conversation={@conversation}
-                />
-              </div>
-            <% end %>
+            <%!-- <%= if @streams.conversations != [] do %>
+
+            <% end %> --%>
+            <div
+              id="conversation-history-list"
+              class="flex flex-1 flex-col overflow-y-auto space-y-1 "
+            >
+              <.render_histories
+                conversations={@streams.conversations}
+                current_conversation={@conversation}
+              />
+            </div>
           </div>
         </div>
 
@@ -112,11 +113,13 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   def render_histories(assigns) do
+    assigns |> dbg()
+
     ~H"""
-    <%= for each_conversation <- @conversations do %>
+    <%= for {_id, each_conversation} <- @conversations do %>
       <.link
         class={
-          if each_conversation.id == @current_conversation.id do
+          if @current_conversation && each_conversation.id == @current_conversation.id do
             "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
           else
             "hover:bg-gray-200 p-1 rounded"
@@ -267,12 +270,14 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("validate_message", %{"form" => message_form_params}, socket) do
-    {:noreply,
-     assign(
-       socket,
-       :message_form,
-       AshPhoenix.Form.validate(socket.assigns.message_form, message_form_params)
-     )}
+    socket =
+      socket
+      |> assign(
+        :message_form,
+        AshPhoenix.Form.validate(socket.assigns.message_form, message_form_params)
+      )
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -321,5 +326,25 @@ defmodule HelloWeb.ChatLive.Index do
   def handle_event("search", %{"query" => text}, socket) do
     Logger.info("->> todo: search -- #{text}")
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "chat:conversations:" <> _,
+          payload: conversation
+        },
+        socket
+      ) do
+    dbg(socket)
+
+    socket =
+      if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id do
+        assign(socket, :conversation, conversation)
+      else
+        socket
+      end
+
+    {:noreply, stream_insert(socket, :conversations, conversation)}
   end
 end
