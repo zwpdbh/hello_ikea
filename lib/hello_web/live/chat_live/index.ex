@@ -113,8 +113,6 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   def render_histories(assigns) do
-    assigns |> dbg()
-
     ~H"""
     <%= for {_id, each_conversation} <- @conversations do %>
       <.link
@@ -326,25 +324,5 @@ defmodule HelloWeb.ChatLive.Index do
   def handle_event("search", %{"query" => text}, socket) do
     Logger.info("->> todo: search -- #{text}")
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(
-        %Phoenix.Socket.Broadcast{
-          topic: "chat:conversations:" <> _,
-          payload: conversation
-        },
-        socket
-      ) do
-    dbg(socket)
-
-    socket =
-      if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id do
-        assign(socket, :conversation, conversation)
-      else
-        socket
-      end
-
-    {:noreply, stream_insert(socket, :conversations, conversation)}
   end
 end
