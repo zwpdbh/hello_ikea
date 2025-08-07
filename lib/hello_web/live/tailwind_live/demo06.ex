@@ -10,7 +10,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
         %{role: "user", from: "You", content: "I am noob", style: "current"},
         %{role: "user", from: "User02", content: "It is fine", style: "other"}
       ]
-      |> List.duplicate(1)
+      |> List.duplicate(20)
       |> List.flatten()
 
     histories =
@@ -31,13 +31,12 @@ defmodule HelloWeb.TailwindLive.Demo06 do
     ~H"""
     <div class="flex flex-col h-screen bg-orange-200">
       <.app_header {assigns}></.app_header>
-      <div class="bg-white flex flex-1 bg-teal-200">
-        <!-- Sidebar -->
+
+      <div class="bg-white flex flex-1 bg-teal-200 overflow-hidden">
         <div class={
           "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
           if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")
         }>
-          <!-- Toggle Button -->
           <div class="flex justify-end">
             <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
               <.icon
@@ -51,8 +50,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
               />
             </button>
           </div>
-          
-    <!-- Sidebar Content (only visible when open) -->
+
           <div :if={@sidebar_open} class="space-y-1 ">
             <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
               <.icon name="hero-pencil-square" />
@@ -66,7 +64,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
               History
             </div>
 
-            <div class="flex-1 overflow-y-auto">
+            <div class="flex-1 overflow-y-auto h-1/2">
               <%= for each_history <- @histories do %>
                 <div class="hover:bg-gray-200 p-1 rounded">{each_history}</div>
               <% end %>
@@ -74,20 +72,29 @@ defmodule HelloWeb.TailwindLive.Demo06 do
           </div>
         </div>
 
-        <%!-- <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
-          <div class="p-4 flex-1 flex ">
-            <div class={
-              if @messages == [],
-                do: "flex-1 flex items-center justify-center",
-                else: "flex-1 flex flex-col"
-            }>
-              <%= if @messages != [] do %>
-                <div class="flex-1 overflow-y-auto rounded-lg p-2 mb-4">
-                  <.render_messages messages={@messages} />
+        <div class="flex flex-1 flex-col bg-gray-50 overflow-hidden">
+          <div class="p-4 flex flex-col flex-1 overflow-hidden">
+            <%= if @messages == [] do %>
+              <div class="flex flex-1 items-center justify-center">
+                <div class="w-4/5 rounded-2xl p-4">
+                  <form phx-submit="submit">
+                    <textarea
+                      id="content"
+                      phx-hook="SubmitOnCmdEnter"
+                      name="content"
+                      class="block resize-none w-full rounded-2xl bg-gray-100 p-4 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+                      placeholder="Enter a message..."
+                      rows="6"
+                    />
+                  </form>
                 </div>
-              <% end %>
+              </div>
+            <% else %>
+              <div class="flex-1 overflow-y-auto rounded-lg bg-white p-2 mb-4">
+                <.render_messages messages={@messages} />
+              </div>
 
-              <div class={if @messages == [], do: "w-4/5 rounded-2xl p-4 ", else: "rounded-2xl p-4 "}>
+              <div class="rounded-2xl p-4">
                 <form phx-submit="submit">
                   <textarea
                     id="content"
@@ -99,9 +106,9 @@ defmodule HelloWeb.TailwindLive.Demo06 do
                   />
                 </form>
               </div>
-            </div>
+            <% end %>
           </div>
-        </div> --%>
+        </div>
       </div>
     </div>
     """
