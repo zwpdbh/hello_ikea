@@ -14,7 +14,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
       |> List.flatten()
 
     histories =
-      1..2
+      1..60
       |> Enum.map(fn x -> "chat history #{x}" end)
 
     socket =
@@ -53,7 +53,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
           </div>
           
     <!-- Sidebar Content (only visible when open) -->
-          <div :if={@sidebar_open} class="space-y-1">
+          <div :if={@sidebar_open} class="space-y-1 ">
             <div class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded">
               <.icon name="hero-pencil-square" />
               <span>new chat</span>
@@ -65,13 +65,16 @@ defmodule HelloWeb.TailwindLive.Demo06 do
             <div class="text-gray-400 font-bold mt-2 text-sm">
               History
             </div>
-            <%= for each_history <- @histories do %>
-              <div class="hover:bg-gray-200 p-1 rounded">{each_history}</div>
-            <% end %>
+
+            <div class="flex-1 overflow-y-auto">
+              <%= for each_history <- @histories do %>
+                <div class="hover:bg-gray-200 p-1 rounded">{each_history}</div>
+              <% end %>
+            </div>
           </div>
         </div>
 
-        <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
+        <%!-- <div class="flex-1 bg-gray-50 overflow-hidden flex flex-col">
           <div class="p-4 flex-1 flex ">
             <div class={
               if @messages == [],
@@ -98,7 +101,7 @@ defmodule HelloWeb.TailwindLive.Demo06 do
               </div>
             </div>
           </div>
-        </div>
+        </div> --%>
       </div>
     </div>
     """
