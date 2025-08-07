@@ -27,7 +27,7 @@ defmodule HelloWeb.ChatLive.Index do
     ~H"""
     <div class="flex flex-col h-screen">
       <.app_header {assigns}></.app_header>
-      <div class="bg-white flex flex-1">
+      <div class="bg-white flex flex-1  overflow-hidden">
         <!-- Sidebar -->
         <div class={
           "transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <>
@@ -48,7 +48,7 @@ defmodule HelloWeb.ChatLive.Index do
             </button>
           </div>
 
-          <div :if={@sidebar_open} class="flex flex-col flex-1">
+          <div :if={@sidebar_open} class="space-y-1">
             <div
               class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded text-sm"
               phx-click="new_chat"
@@ -72,67 +72,69 @@ defmodule HelloWeb.ChatLive.Index do
               </form>
             </div>
 
-            <div class="flex flex-1 flex-col ">
-              <div class="text-gray-400 font-bold mt-2 text-sm">
-                History
-              </div>
-              <div class="flex flex-col flex-1  overflow-y-auto  px-1 space-y-1">
-                <%= if @conversations != [] do %>
-                  <.render_histories conversations={@conversations} />
-                <% end %>
-              </div>
+            <div class="text-gray-400 font-bold mt-2 text-sm">
+              History
             </div>
+            <%= if @conversations != [] do %>
+              <div class="flex flex-col flex-1  overflow-y-auto space-y-1 h-12/20">
+                <.render_histories conversations={@conversations} />
+              </div>
+            <% end %>
           </div>
         </div>
 
-        <div class="flex flex-col flex-1 bg-gray-50 overflow-hidden ">
-          <div class="p-4 flex-1 flex ">
-            <div class={
-              if @messages == [],
-                do: "flex-1 flex items-center justify-center",
-                else: "flex-1 flex flex-col"
-            }>
-              <%= if @messages != [] do %>
-                <div class="flex-1 overflow-y-auto rounded-lg p-2 mb-4">
-                  <.render_messages messages={@messages} current_user_id={@current_user_id} />
+        <div class="flex flex-1 flex-col bg-gray-50 overflow-hidden">
+          <div class="p-4 flex flex-col flex-1 overflow-hidden">
+            <%= if @messages == [] do %>
+              <div class="flex flex-1 items-center justify-center">
+                <div class="w-4/5 rounded-2xl p-4">
+                  <.render_message_form message_form={@message_form} can_submit={@can_submit}>
+                  </.render_message_form>
                 </div>
-              <% end %>
-
-              <div class={
-                if @messages == [],
-                  do: "w-4/5 rounded-2xl p-4",
-                  else: "rounded-2xl p-4"
-              }>
-                <.form
-                  :let={form}
-                  for={@message_form}
-                  phx-submit="send_message"
-                  phx-change="validate_message"
-                  class="relative"
-                >
-                  <textarea
-                    id="message_content"
-                    phx-hook="SubmitOnCmdEnter"
-                    class="block resize-none w-full rounded-2xl bg-gray-100 p-4 pr-12 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
-                    placeholder="Enter a message..."
-                    rows="6"
-                    name={form[:content].name}
-                    value={form[:content].value}
-                  />
-                  <button
-                    type="submit"
-                    class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
-                    disabled={!@can_submit}
-                  >
-                    <.icon name="hero-paper-airplane" class="w-5 h-5 rotate-45" />
-                  </button>
-                </.form>
               </div>
-            </div>
+            <% else %>
+              <div class="flex-1 overflow-y-auto rounded-lg bg-white p-2 mb-4">
+                <.render_messages messages={@messages} current_user_id={@current_user_id} />
+              </div>
+
+              <div class="rounded-2xl p-4">
+                <.render_message_form message_form={@message_form} can_submit={@can_submit}>
+                </.render_message_form>
+              </div>
+            <% end %>
           </div>
         </div>
       </div>
     </div>
+    """
+  end
+
+  def render_message_form(assigns) do
+    ~H"""
+    <.form
+      :let={form}
+      for={@message_form}
+      phx-submit="send_message"
+      phx-change="validate_message"
+      class="relative"
+    >
+      <textarea
+        id="message_content"
+        phx-hook="SubmitOnCmdEnter"
+        class="block resize-none w-full rounded-2xl bg-gray-100 p-4 pr-12 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
+        placeholder="Enter a message..."
+        rows="6"
+        name={form[:content].name}
+        value={form[:content].value}
+      />
+      <button
+        type="submit"
+        class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
+        disabled={!@can_submit}
+      >
+        <.icon name="hero-paper-airplane" class="w-5 h-5 rotate-45" />
+      </button>
+    </.form>
     """
   end
 
