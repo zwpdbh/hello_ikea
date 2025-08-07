@@ -15,7 +15,10 @@ defmodule HelloWeb.ChatLive.Index do
       socket
       |> assign(:sidebar_open, true)
       |> assign(:messages, [])
-      |> stream(:conversations, Hello.Chat.my_conversations!(actor: socket.assigns.current_user))
+      |> stream(
+        :conversations,
+        Hello.Chat.my_conversations!(actor: socket.assigns.current_user, stream?: true)
+      )
       |> assign(:current_user_id, socket.assigns.current_user.id)
       |> assign(:can_submit, false)
 
