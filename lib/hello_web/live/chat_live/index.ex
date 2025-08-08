@@ -75,23 +75,15 @@ defmodule HelloWeb.ChatLive.Index do
             <div class="text-gray-400 font-bold mt-2 text-sm">
               History
             </div>
-            <%!-- <%= if @streams.conversations != [] do %>
 
-            <% end %> --%>
-            <div
-              id="conversation-history-list"
-              class="flex flex-1 flex-col overflow-y-auto space-y-1 "
-              phx-update="stream"
-            >
-              <.render_histories
-                conversations={@streams.conversations}
-                current_conversation={@conversation}
-              />
-            </div>
+            <.render_histories
+              conversations={@streams.conversations}
+              current_conversation={@conversation}
+            />
           </div>
         </div>
 
-        <div class="container flex flex-1 flex-col overflow-hidden ">
+        <div class="flex flex-1 flex-col overflow-hidden ">
           <div class="p-4 flex flex-col flex-1 overflow-hidden relative">
             <div class="absolute top-1 left-1 bg-blue-200 text-sm font-bold rounded">
               <form phx-change="llm_option">
@@ -109,10 +101,7 @@ defmodule HelloWeb.ChatLive.Index do
                 </div>
               </div>
             <% else %>
-              <div class="flex-1 overflow-y-auto rounded-lg bg-white p-2 mb-4">
-                <.render_messages messages={@messages} current_user_id={@current_user_id} />
-              </div>
-
+              <.render_messages messages={@streams.messages} current_user_id={@current_user_id} />
               <div class="rounded-2xl p-4">
                 <.render_message_form message_form={@message_form} can_submit={@can_submit}>
                 </.render_message_form>
@@ -127,25 +116,31 @@ defmodule HelloWeb.ChatLive.Index do
 
   def render_histories(assigns) do
     ~H"""
-    <%= for {id, each_conversation} <- @conversations do %>
-      <.link
-        id={id}
-        class={
-          if @current_conversation && each_conversation.id == @current_conversation.id do
-            "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
-          else
-            "hover:bg-gray-200 p-1 rounded"
-          end
-        }
-        href={~p"/chats/#{each_conversation.id}"}
-      >
-        <%= if each_conversation.title do %>
-          {each_conversation.title}
-        <% else %>
-          {"Chat #{each_conversation.id}"}
-        <% end %>
-      </.link>
-    <% end %>
+    <div
+      id="conversation-history-list"
+      class="flex flex-1 flex-col overflow-y-auto space-y-1 "
+      phx-update="stream"
+    >
+      <%= for {id, each_conversation} <- @conversations do %>
+        <.link
+          id={id}
+          class={
+            if @current_conversation && each_conversation.id == @current_conversation.id do
+              "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
+            else
+              "hover:bg-gray-200 p-1 rounded"
+            end
+          }
+          href={~p"/chats/#{each_conversation.id}"}
+        >
+          <%= if each_conversation.title do %>
+            {each_conversation.title}
+          <% else %>
+            {"Chat #{each_conversation.id}"}
+          <% end %>
+        </.link>
+      <% end %>
+    </div>
     """
   end
 
@@ -180,49 +175,54 @@ defmodule HelloWeb.ChatLive.Index do
 
   defp render_messages(assigns) do
     ~H"""
-    <div class="space-y-3">
-      <%= for msg <- @messages do %>
-        <div class={
-          "flex gap-2 " <>
-          if(msg.sender_id == @current_user_id, do: "justify-end", else: "justify-start")
-        }>
-          <%= if msg.sender_id != @current_user_id do %>
-            <div class="flex-shrink-0 w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
-              {sender_initial(msg)}
-            </div>
-          <% end %>
-
-          <div class={
-            "max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm " <>
-            case sender_type(msg, @current_user_id) do
-              :me -> "bg-blue-500 text-white rounded-tr-none"
-              :other -> "bg-gray-300 text-gray-800 rounded-tl-none"
-              :bot -> "bg-green-500 text-white rounded-tl-none"
-            end
-          }>
-            <p>{msg.content}</p>
-          </div>
-
-          <%= if sender_type(msg, @current_user_id) == :bot do %>
-            <div class="flex-shrink-0 ml-1">
-              <.icon name="hero-cog-6-tooth" class="w-5 h-5 text-gray-500" />
-            </div>
-          <% end %>
-        </div>
+    <div
+      id="conversation-messages-container"
+      phx-update="stream"
+      class="flex flex-1 flex-col-reverse px-6 py-4 gap-2 scroll-smooth"
+    >
+      <%= for {id, msg} <- @messages do %>
+        <%= if msg.sender_id == @current_user_id do %>
+          <.render_message_from_me message={msg} id={id}></.render_message_from_me>
+        <% else %>
+          <.render_message_from_others message={msg} id={id}></.render_message_from_others>
+        <% end %>
       <% end %>
     </div>
     """
   end
 
-  defp sender_initial(%{sender_type: :bot}), do: "🤖"
-  defp sender_initial(%{sender_type: _, content: _}), do: "👤"
+  defp render_message_from_me(assigns) do
+    ~H"""
+    <div id={@id} class="flex gap-3 justify-end">
+      <div class="px-4 py-2 rounded-xl max-w-xl bg-blue-400 text-white">
+        {@message.content}
+      </div>
+      <div class="flex-shrink-0">
+        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+          <.icon name="hero-user-solid" class="w-6 h-6 text-gray-800" />
+        </div>
+      </div>
+    </div>
+    """
+  end
 
-  defp sender_type(msg, current_user_id) do
-    cond do
-      msg.sender_type == :bot -> :bot
-      msg.sender_id == current_user_id -> :me
-      true -> :other
-    end
+  defp render_message_from_others(assigns) do
+    ~H"""
+    <div id={@id} class="flex gap-3 justify-start">
+      <div class="flex-shrink-0">
+        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+          <img
+            src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
+            alt="Agent"
+            class="w-8 h-8 rounded-full"
+          />
+        </div>
+      </div>
+      <div class="px-4 py-2 rounded-xl max-w-xl bg-gray-200 text-black">
+        {@message.content}
+      </div>
+    </div>
+    """
   end
 
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
@@ -244,7 +244,8 @@ defmodule HelloWeb.ChatLive.Index do
 
     socket
     |> assign(:conversation, conversation)
-    |> assign(:messages, Hello.Chat.message_history!(conversation.id, stream?: false))
+    |> assign(:messages, nil)
+    |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
     |> assign_message_form()
     |> then(&{:noreply, &1})
   end
@@ -258,6 +259,7 @@ defmodule HelloWeb.ChatLive.Index do
     socket =
       socket
       |> assign(:conversation, nil)
+      |> stream(:messages, [])
       |> assign_message_form()
 
     {:noreply, socket}
@@ -317,12 +319,12 @@ defmodule HelloWeb.ChatLive.Index do
              |> Map.put("sender_type", :user)
          ) do
       {:ok, message} ->
-        updated_messages = [message] ++ socket.assigns.messages
-
         if socket.assigns.conversation do
           socket
           |> assign_message_form()
-          |> assign(:messages, updated_messages)
+          |> assign(:messages, nil)
+          |> stream_insert(:messages, message, at: 0)
+          |> dbg()
           |> then(&{:noreply, &1})
         else
           {:noreply,
@@ -350,4 +352,19 @@ defmodule HelloWeb.ChatLive.Index do
     Logger.info("->> todo: search -- #{text}")
     {:noreply, socket}
   end
+
+  # @impl true
+  # def handle_info(
+  #       %Phoenix.Socket.Broadcast{
+  #         topic: "chat:messages:" <> conversation_id,
+  #         payload: message
+  #       },
+  #       socket
+  #     ) do
+  #   if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
+  #     {:noreply, stream_insert(socket, :messages, message, at: 0)}
+  #   else
+  #     {:noreply, socket}
+  #   end
+  # end
 end
