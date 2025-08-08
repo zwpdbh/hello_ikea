@@ -144,9 +144,9 @@ defmodule HelloWeb.ChatLive.Index do
 
           <button
             phx-click={"delete_conversation:#{each_conversation.id}"}
-            class="transform items-center justify-center"
+            class="pl-2 transform items-center justify-center text-sm hover:text-red-600 rounded-full transition-all duration-200 ease-in-out"
           >
-            <.icon class="text-red-200" name="hero-x-circle" />
+            <.icon class="w-4 h-4 text-gray-500 hover:text-red-600" name="hero-x-mark" />
           </button>
         </div>
       <% end %>
