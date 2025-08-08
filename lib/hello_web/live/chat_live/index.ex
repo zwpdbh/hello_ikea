@@ -14,6 +14,8 @@ defmodule HelloWeb.ChatLive.Index do
     socket =
       socket
       |> assign(:sidebar_open, true)
+      # assign [] to messages to indicate it is a new chat,
+      # set it nil later to indicate it is in a conversation because in conversation we use streams.messages
       |> assign(:messages, [])
       |> stream(
         :conversations,
