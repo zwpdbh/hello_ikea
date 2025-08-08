@@ -124,23 +124,31 @@ defmodule HelloWeb.ChatLive.Index do
       phx-update="stream"
     >
       <%= for {id, each_conversation} <- @conversations do %>
-        <.link
+        <div
           id={id}
           class={
             if @current_conversation && each_conversation.id == @current_conversation.id do
-              "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium"
+              "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium flex"
             else
-              "hover:bg-gray-200 p-1 rounded"
+              "hover:bg-gray-200 p-1 rounded flex"
             end
           }
-          href={~p"/chats/#{each_conversation.id}"}
         >
-          <%= if each_conversation.title do %>
-            {each_conversation.title}
-          <% else %>
-            {"Chat #{each_conversation.id}"}
-          <% end %>
-        </.link>
+          <.link href={~p"/chats/#{each_conversation.id}"}>
+            <%= if each_conversation.title do %>
+              {each_conversation.title}
+            <% else %>
+              {"Chat #{each_conversation.id}"}
+            <% end %>
+          </.link>
+
+          <button
+            phx-click={"delete_conversation:#{each_conversation.id}"}
+            class="transform items-center justify-center"
+          >
+            <.icon class="text-red-200" name="hero-x-circle" />
+          </button>
+        </div>
       <% end %>
     </div>
     """
@@ -282,6 +290,15 @@ defmodule HelloWeb.ChatLive.Index do
 
     socket
     |> assign(:message_form, form)
+  end
+
+  @impl true
+  def handle_event("delete_conversation:" <> conversation_id, _params, socket) do
+    Logger.warning(
+      "->>TODO: delete conversation: #{conversation_id} for user: #{inspect(socket.assigns.current_user)}"
+    )
+
+    {:noreply, socket}
   end
 
   @impl true
