@@ -12,6 +12,7 @@ defmodule Hello.Chat.Conversation do
     defaults [:read]
 
     read :my_conversations do
+      pagination keyset?: true, required?: false
       filter expr(user_id == ^actor(:id))
     end
 

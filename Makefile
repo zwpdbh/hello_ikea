@@ -10,6 +10,8 @@ reset_db:
 kill_erlang_node:
 	ps aux | grep "name hello@127.0.0.1" | grep -v grep | awk '{print $$2}' | xargs -r kill -9
 
+# Notice:
+# exla must be compiled with `export XLA_TARGET=cuda12 && mix deps.compile exla`
 run_app:
 	make kill_erlang_node
 	export XLA_TARGET="cuda12" && export TF_GPU_ALLOCATOR=cuda_malloc_async && iex --erl "-kernel shell_history enabled" --name hello@127.0.0.1 --cookie some_token -S mix phx.server 
