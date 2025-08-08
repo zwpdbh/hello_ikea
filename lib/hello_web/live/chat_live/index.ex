@@ -21,6 +21,7 @@ defmodule HelloWeb.ChatLive.Index do
       )
       |> assign(:current_user_id, socket.assigns.current_user.id)
       |> assign(:can_submit, false)
+      |> assign(:llm_option, :local)
 
     {:ok, socket}
   end
@@ -90,8 +91,16 @@ defmodule HelloWeb.ChatLive.Index do
           </div>
         </div>
 
-        <div class="flex flex-1 flex-col bg-gray-50 overflow-hidden">
-          <div class="p-4 flex flex-col flex-1 overflow-hidden">
+        <div class="container flex flex-1 flex-col overflow-hidden ">
+          <div class="p-4 flex flex-col flex-1 overflow-hidden relative">
+            <div class="absolute top-1 left-1 bg-blue-200 text-sm font-bold rounded">
+              <form phx-change="llm_option">
+                <select name="source">
+                  <option value="local">Local</option>
+                  <option value="openai">OpenAI</option>
+                </select>
+              </form>
+            </div>
             <%= if @messages == [] do %>
               <div class="flex flex-1 items-center justify-center">
                 <div class="w-4/5 rounded-2xl p-4">
@@ -269,6 +278,17 @@ defmodule HelloWeb.ChatLive.Index do
 
     socket
     |> assign(:message_form, form)
+  end
+
+  @impl true
+  def handle_event("llm_option", %{"source" => value}, socket) do
+    option =
+      case value do
+        "openai" -> :openai
+        "local" -> :local
+      end
+
+    {:noreply, socket |> assign(:llm_option, option)}
   end
 
   @impl true
