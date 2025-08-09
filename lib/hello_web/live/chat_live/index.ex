@@ -11,6 +11,8 @@ defmodule HelloWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     HelloWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_user.id}")
 
+    Hello.Chat.my_conversations!(actor: socket.assigns.current_user) |> dbg()
+
     socket =
       socket
       |> assign(:sidebar_open, true)

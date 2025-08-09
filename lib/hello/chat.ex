@@ -16,5 +16,7 @@ defmodule Hello.Chat do
         args: [:conversation_id],
         default_options: [query: [sort: [inserted_at: :desc]]]
     end
+
+    resource Hello.Chat.UserConversation
   end
 end

@@ -106,6 +106,15 @@ defmodule Hello.Accounts.User do
     end
   end
 
+  relationships do
+    has_many :user_conversations, Hello.Chat.UserConversation
+
+    many_to_many :conversations, Hello.Chat.Conversation do
+      join_relationship :user_conversations
+      destination_attribute_on_join_resource :conversation_id
+    end
+  end
+
   identities do
     identity :unique_email, [:email]
   end
