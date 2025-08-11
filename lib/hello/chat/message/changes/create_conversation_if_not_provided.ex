@@ -1,5 +1,8 @@
 defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
   use Ash.Resource.Change
+
+  require Ash.Query
+
   @impl true
   def change(changeset, _opts, context) do
     changeset =
@@ -19,6 +22,15 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
       )
     else
       Ash.Changeset.before_action(changeset, fn changeset ->
+        # since conversation and user is many to many relationship, so we need to set UserConversation for it.
+        user_id = Ash.Changeset.get_attribute(changeset, :sender_id)
+
+        _user =
+          Hello.Accounts.User
+          |> Ash.Query.filter(id == ^user_id)
+          |> Ash.read!()
+          |> dbg()
+
         conversation =
           context |> Ash.Context.to_opts() |> Hello.Chat.create_conversation!()
 

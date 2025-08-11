@@ -81,3 +81,8 @@ For `Hello.Accounts.User`
 
 - Given current actor, how to get all related conversations.
 - Define a method on conversation to filter all conversations given an actor id.
+
+
+## References 
+
+- [Ash -- Manage Relationships](https://hexdocs.pm/ash/relationships.html#managing-relationships)
