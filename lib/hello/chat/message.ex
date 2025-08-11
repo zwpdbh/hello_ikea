@@ -20,6 +20,10 @@ defmodule Hello.Chat.Message do
     create :create do
       accept [:content, :sender_type, :sender_id]
 
+      argument :conversation_id, :uuid do
+        public? false
+      end
+
       change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
     end
   end

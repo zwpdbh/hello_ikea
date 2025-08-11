@@ -11,8 +11,6 @@ defmodule HelloWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     HelloWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_user.id}")
 
-    Hello.Chat.my_conversations!(actor: socket.assigns.current_user) |> dbg()
-
     socket =
       socket
       |> assign(:sidebar_open, true)
@@ -334,7 +332,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("send_message", %{"form" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form,
+    case AshPhoenix.Form.submit(socket.assigns.message_form |> dbg(),
            params:
              params
              |> Map.put("sender_type", :user)
@@ -345,7 +343,6 @@ defmodule HelloWeb.ChatLive.Index do
           |> assign_message_form()
           |> assign(:messages, nil)
           |> stream_insert(:messages, message, at: 0)
-          |> dbg()
           |> then(&{:noreply, &1})
         else
           {:noreply,

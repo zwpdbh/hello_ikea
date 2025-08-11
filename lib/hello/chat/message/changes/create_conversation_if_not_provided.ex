@@ -1,4 +1,5 @@
 defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
+  require Logger
   use Ash.Resource.Change
 
   require Ash.Query
@@ -13,6 +14,8 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
         _ ->
           changeset
       end
+
+    changeset |> dbg()
 
     if changeset.arguments[:conversation_id] do
       Ash.Changeset.force_change_attribute(
@@ -33,7 +36,8 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
           Hello.Chat.Conversation
           |> Ash.Changeset.for_create(:create, %{title: nil}, actor: user)
           |> Ash.create()
-          |> dbg()
+
+        Logger.warning("created new conversation: #{inspect(conversation)}")
 
         {:ok, _user_conversation} =
           Hello.Chat.UserConversation

@@ -17,10 +17,18 @@ defmodule Hello.Chat.UserConversation do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:user_id, :conversation_id]
+    end
   end
 
   policies do
     policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type(:create) do
       authorize_if always()
     end
   end

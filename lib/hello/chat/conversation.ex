@@ -13,7 +13,7 @@ defmodule Hello.Chat.Conversation do
 
     read :my_conversations do
       pagination keyset?: true, required?: false
-      filter expr(exists(user_conversations, user_id == ^actor(:id)))
+      # filter expr(exists(user_conversations, user_id == ^actor(:id)))
     end
 
     create :create do
@@ -41,10 +41,9 @@ defmodule Hello.Chat.Conversation do
       public? true
     end
 
-    has_many :user_conversations, Hello.Chat.UserConversation
-
     many_to_many :users, Hello.Accounts.User do
-      join_relationship :user_conversations
+      through Hello.Chat.UserConversation
+      source_attribute_on_join_resource :conversation_id
       destination_attribute_on_join_resource :user_id
     end
   end
@@ -61,8 +60,16 @@ defmodule Hello.Chat.Conversation do
 end
 
 defmodule Hello.Chat.Conversation.Play do
+  require Ash.Query
+
   def load_one_user_conversations() do
     current_user = nil
     Hello.Chat.my_conversations!(actor: current_user, stream?: true)
+  end
+
+  def load_all_conversations() do
+    Hello.Chat.Conversation
+    |> Ash.Query.load(:users)
+    |> Ash.read!(authorize?: false)
   end
 end
