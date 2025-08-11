@@ -35,6 +35,7 @@ defmodule Hello.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bcrypt_elixir, "~> 3.0"},
       {:oban, "~> 2.19"},
       {:ash_oban, "~> 0.4"},
       {:picosat_elixir, "~> 0.2"},

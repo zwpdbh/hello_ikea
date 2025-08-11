@@ -2,14 +2,33 @@
   "attributes": [
     {
       "allow_nil?": false,
-      "default": "fragment(\"gen_random_uuid()\")",
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": true,
-      "references": null,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": true,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "user_conversations_user_id_fkey",
+        "on_delete": "delete",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "users"
+      },
       "scale": null,
       "size": null,
-      "source": "id",
+      "source": "user_id",
       "type": "uuid"
     },
     {
@@ -17,7 +36,7 @@
       "default": "nil",
       "generated?": false,
       "precision": null,
-      "primary_key?": false,
+      "primary_key?": true,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -31,16 +50,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "conversations_user_id_fkey",
-        "on_delete": null,
+        "name": "user_conversations_conversation_id_fkey",
+        "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "users"
+        "table": "conversations"
       },
       "scale": null,
       "size": null,
-      "source": "user_id",
+      "source": "conversation_id",
       "type": "uuid"
     }
   ],
@@ -49,7 +68,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": false,
-  "hash": "574D15586F1527A369BB96A3904C8BEA6ABC69AFAFF54655A4BEC78770E606C1",
+  "hash": "82D8000E2F54E01F39565460D9A66A266B3542520E1814AA973FF418E4907DD8",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -58,5 +77,5 @@
   },
   "repo": "Elixir.Hello.Repo",
   "schema": null,
-  "table": "conversations"
+  "table": "user_conversations"
 }

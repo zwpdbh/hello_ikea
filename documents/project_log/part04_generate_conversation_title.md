@@ -86,3 +86,4 @@ For `Hello.Accounts.User`
 ## References 
 
 - [Ash -- Manage Relationships](https://hexdocs.pm/ash/relationships.html#managing-relationships)
+- [Part 4 — Ash Framework for Phoenix Developers — Relationshps 2/2](https://medium.com/@lambert.kamaro/part-4-ash-framework-for-phoenix-developers-relationshps-2-2-e87ad246a723)

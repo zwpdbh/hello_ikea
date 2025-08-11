@@ -13,6 +13,18 @@
       "type": "uuid"
     },
     {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "email",
+      "type": "citext"
+    },
+    {
       "allow_nil?": true,
       "default": "nil",
       "generated?": false,
@@ -21,31 +33,19 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "title",
+      "source": "hashed_password",
       "type": "text"
     },
     {
-      "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "allow_nil?": true,
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "inserted_at",
-      "type": "utc_datetime_usec"
-    },
-    {
-      "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "updated_at",
+      "source": "confirmed_at",
       "type": "utc_datetime_usec"
     }
   ],
@@ -54,8 +54,23 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "E040DBB873D296FDCD2CEBDA250587F658DE900F233C95AE1F4E57921D0BD9EE",
-  "identities": [],
+  "hash": "8A80A2F0552C13384D293E5543502D754372A84A61B563AC67E86B9327FF3C62",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "users_unique_email_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "email"
+        }
+      ],
+      "name": "unique_email",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -63,5 +78,5 @@
   },
   "repo": "Elixir.Hello.Repo",
   "schema": null,
-  "table": "conversations"
+  "table": "users"
 }

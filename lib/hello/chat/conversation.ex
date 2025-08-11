@@ -18,7 +18,6 @@ defmodule Hello.Chat.Conversation do
 
     create :create do
       accept [:title]
-      change relate_actor(:user)
     end
 
     update :update do

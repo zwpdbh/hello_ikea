@@ -122,7 +122,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "unique_content_hash_index",
+      "name": "content_hash_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -133,8 +133,23 @@
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "4B5DFAC1C8E7969C894BBA2D7A4909CB1BF7B78B7A8BC085D5F7415DBCAEE039",
-  "identities": [],
+  "hash": "7134065D3AD5E17BC70A42542DE59171D5E430DDE9EB180F1B23BF5DE8EAA0F9",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "sections_unique_content_hash_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "content_hash"
+        }
+      ],
+      "name": "unique_content_hash",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": null,
     "global": null,
