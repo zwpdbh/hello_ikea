@@ -23,9 +23,6 @@ defmodule Hello.Chat.Message do
       argument :conversation_id, :uuid do
         public? false
       end
-
-      # see: https://hexdocs.pm/ash/Ash.Changeset.html
-      change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
     end
   end
 
