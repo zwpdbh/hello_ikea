@@ -6,49 +6,68 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
 
   @impl true
   def change(changeset, _opts, context) do
-    changeset =
-      case Ash.Changeset.get_attribute(changeset, :sender_type) do
-        :user ->
-          Ash.Changeset.change_attribute(changeset, :sender_id, context.actor.id)
+    case {Ash.Changeset.get_attribute(changeset, :sender_type),
+          Ash.Changeset.get_argument(changeset, :conversation_id)} do
+      {nil, nil} ->
+        # This is the case user is just directed to the `/chats` page
+        changeset
 
-        _ ->
-          changeset
-      end
+      {:user, nil} ->
+        # If the message is initalized by user, but have not associated with an conversation:
+        # 1. Create the conversation
+        conversation = create_conversation(context.actor)
 
-    changeset |> dbg()
+        # 2. Create manay to many relationship of User -- Conversation
+        _ = add_user_conversation_relationship(conversation.id, context.actor.id)
 
-    if changeset.arguments[:conversation_id] do
-      Ash.Changeset.force_change_attribute(
-        changeset,
-        :conversation_id,
-        changeset.arguments.conversation_id
-      )
-    else
-      Ash.Changeset.before_action(changeset, fn changeset ->
-        user_id = Ash.Changeset.get_attribute(changeset, :sender_id)
+        # 3. Set the message attribute's conversation_id
+        changeset
+        |> set_message_conversation_id(conversation.id)
+        |> set_message_from_user_by_actor(context.actor.id)
 
-        {:ok, [user]} =
-          Hello.Accounts.User
-          |> Ash.Query.filter(id == ^user_id)
-          |> Ash.read(authorize?: false)
+      {:user, conversation_id} ->
+        # If the message is initalized by user, and have already associated with an conversation:
+        # 1. Create manay to many relationship of User -- Conversation
+        _ = add_user_conversation_relationship(conversation_id, context.actor.id)
 
-        {:ok, conversation} =
-          Hello.Chat.Conversation
-          |> Ash.Changeset.for_create(:create, %{title: nil}, actor: user)
-          |> Ash.create()
+        # 2. Set the message attribute's conversation_id
+        changeset
+        |> set_message_conversation_id(conversation_id)
+        |> set_message_from_user_by_actor(context.actor.id)
 
-        Logger.warning("created new conversation: #{inspect(conversation)}")
+      {_other, nil} ->
+        dbg(changeset)
+        dbg(context)
+        raise "the conversation but be initialized by :user"
 
-        {:ok, _user_conversation} =
-          Hello.Chat.UserConversation
-          |> Ash.Changeset.for_create(:create, %{
-            user_id: user.id,
-            conversation_id: conversation.id
-          })
-          |> Ash.create()
-
-        Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation.id)
-      end)
+      {_other, conversation_id} ->
+        changeset
+        |> set_message_conversation_id(conversation_id)
+        |> set_message_from_user_by_actor(context.actor.id)
     end
+  end
+
+  defp add_user_conversation_relationship(conversation_id, user_id) do
+    {:ok, _user_conversation} =
+      Hello.Chat.UserConversation
+      |> Ash.Changeset.for_create(:create, %{user_id: user_id, conversation_id: conversation_id})
+      |> Ash.create()
+  end
+
+  defp create_conversation(user) do
+    {:ok, conversation} =
+      Hello.Chat.Conversation
+      |> Ash.Changeset.for_create(:create, %{title: nil}, actor: user)
+      |> Ash.create()
+
+    conversation
+  end
+
+  defp set_message_conversation_id(changeset, conversation_id) do
+    Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation_id)
+  end
+
+  defp set_message_from_user_by_actor(changeset, user_id) do
+    Ash.Changeset.change_attribute(changeset, :sender_id, user_id)
   end
 end
