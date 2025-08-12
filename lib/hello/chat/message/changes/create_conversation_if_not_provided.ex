@@ -33,7 +33,7 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
         |> dbg()
 
       {:user, conversation_id} ->
-        "use existing conversation" |> dbg()
+        "use existing conversation #{conversation_id}" |> dbg()
 
         changeset
         |> Ash.Changeset.before_action(fn changeset ->
@@ -42,8 +42,8 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
           _ = add_user_conversation_relationship(conversation_id, context.actor.id)
 
           changeset
-          |> set_message_conversation_id(conversation_id)
         end)
+        |> set_message_conversation_id(conversation_id)
         |> set_message_from_user_by_actor(context.actor.id)
         |> dbg()
 
