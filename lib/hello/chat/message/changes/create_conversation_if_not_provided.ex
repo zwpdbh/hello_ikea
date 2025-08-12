@@ -13,31 +13,41 @@ defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
         changeset
 
       {:user, nil} ->
+        "create conversation" |> dbg()
         # If the message is initalized by user, but have not associated with an conversation:
         # 1. Create the conversation
-        conversation = create_conversation(context.actor)
 
-        # 2. Create manay to many relationship of User -- Conversation
-        _ = add_user_conversation_relationship(conversation.id, context.actor.id)
-
-        # 3. Set the message attribute's conversation_id
         changeset
-        |> set_message_conversation_id(conversation.id)
+        # See: https://hexdocs.pm/ash/3.5.34/Ash.Changeset.html#before_action/3
+        |> Ash.Changeset.before_action(fn changeset ->
+          conversation = create_conversation(context.actor)
+
+          # 2. Create manay to many relationship of User -- Conversation
+          _ = add_user_conversation_relationship(conversation.id, context.actor.id)
+
+          # 3. Set the message attribute's conversation_id
+          changeset
+          |> set_message_conversation_id(conversation.id)
+        end)
         |> set_message_from_user_by_actor(context.actor.id)
+        |> dbg()
 
       {:user, conversation_id} ->
-        # If the message is initalized by user, and have already associated with an conversation:
-        # 1. Create manay to many relationship of User -- Conversation
-        _ = add_user_conversation_relationship(conversation_id, context.actor.id)
+        "use existing conversation" |> dbg()
 
-        # 2. Set the message attribute's conversation_id
         changeset
-        |> set_message_conversation_id(conversation_id)
+        |> Ash.Changeset.before_action(fn changeset ->
+          # If the message is initalized by user, and have already associated with an conversation:
+          # 1. Create manay to many relationship of User -- Conversation
+          _ = add_user_conversation_relationship(conversation_id, context.actor.id)
+
+          changeset
+          |> set_message_conversation_id(conversation_id)
+        end)
         |> set_message_from_user_by_actor(context.actor.id)
+        |> dbg()
 
       {_other, nil} ->
-        dbg(changeset)
-        dbg(context)
         raise "the conversation but be initialized by :user"
 
       {_other, conversation_id} ->

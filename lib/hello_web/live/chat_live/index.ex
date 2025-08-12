@@ -332,7 +332,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("send_message", %{"form" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form |> dbg(),
+    case AshPhoenix.Form.submit(socket.assigns.message_form,
            params:
              params
              |> Map.put("sender_type", :user)
