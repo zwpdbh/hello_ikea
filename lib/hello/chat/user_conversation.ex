@@ -18,8 +18,36 @@ defmodule Hello.Chat.UserConversation do
   actions do
     defaults [:read]
 
+    read :for_conversation do
+      argument :conversation_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(conversation_id == ^arg(:conversation_id))
+      pagination keyset?: true, required?: false
+    end
+
+    read :for_user do
+      argument :user_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(user_id == ^arg(:user_id))
+      pagination keyset?: true, required?: false
+    end
+
     create :create do
-      accept [:user_id, :conversation_id]
+      accept [:conversation_id]
+
+      change relate_actor(:user, allow_nil?: false)
+    end
+
+    destroy :destroy do
+      argument :conversation_id, :uuid do
+        allow_nil? false
+      end
+
+      change filter expr(conversation_id == ^arg(:conversation_id) && user_id == ^actor(:id))
     end
   end
 
@@ -29,7 +57,11 @@ defmodule Hello.Chat.UserConversation do
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if actor_present()
+    end
+
+    policy action_type(:destroy) do
+      authorize_if actor_present()
     end
   end
 

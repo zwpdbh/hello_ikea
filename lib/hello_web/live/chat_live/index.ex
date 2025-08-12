@@ -143,7 +143,7 @@ defmodule HelloWeb.ChatLive.Index do
           </.link>
 
           <button
-            phx-click={"delete_conversation:#{each_conversation.id}"}
+            phx-click={"leave_conversation:#{each_conversation.id}"}
             class="pl-2 transform items-center justify-center text-sm hover:text-red-600 rounded-full transition-all duration-200 ease-in-out"
           >
             <.icon class="w-4 h-4 text-gray-500 hover:text-red-600" name="hero-x-mark" />
@@ -237,7 +237,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
     conversation =
-      Hello.Chat.get_conversation!(conversation_id, actor: socket.assigns.current_user)
+      Hello.Chat.get_conversation_by_id!(conversation_id, actor: socket.assigns.current_user)
 
     # cond do → checks multiple conditions and runs the first matching block.
     cond do
@@ -293,10 +293,12 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("delete_conversation:" <> conversation_id, _params, socket) do
+  def handle_event("leave_conversation:" <> conversation_id, _params, socket) do
     Logger.warning(
       "->>TODO: delete conversation: #{conversation_id} for user: #{inspect(socket.assigns.current_user)}"
     )
+
+    Hello.Chat.leave_conversation!(conversation_id, actor: socket.assigns.current_user)
 
     {:noreply, socket}
   end

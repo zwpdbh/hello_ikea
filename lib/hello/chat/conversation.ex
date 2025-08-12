@@ -9,7 +9,7 @@ defmodule Hello.Chat.Conversation do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     read :my_conversations do
       pagination keyset?: true, required?: false
@@ -61,11 +61,6 @@ end
 
 defmodule Hello.Chat.Conversation.Play do
   require Ash.Query
-
-  def load_one_user_conversations() do
-    current_user = nil
-    Hello.Chat.my_conversations!(actor: current_user, stream?: true)
-  end
 
   def load_all_conversations() do
     Hello.Chat.Conversation
