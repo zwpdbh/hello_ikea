@@ -320,9 +320,7 @@ defmodule HelloWeb.ChatLive.Index do
   def handle_event("send_message", %{"form" => form_data}, socket) do
     case AshPhoenix.Form.submit(
            socket.assigns.message_form,
-           params:
-             form_data
-             |> Map.put("sender_id", socket.assigns.current_user.id)
+           params: form_data
          ) do
       {:ok, message} ->
         if socket.assigns.conversation do
