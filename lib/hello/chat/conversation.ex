@@ -1,7 +1,8 @@
 defmodule Hello.Chat.Conversation do
   use Ash.Resource,
     domain: Hello.Chat,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "conversations"
@@ -56,6 +57,10 @@ defmodule Hello.Chat.Conversation do
                       (count(messages) > 3 or
                          (count(messages) > 1 and inserted_at < ago(10, :minute)))
                   )
+    end
+
+    calculate :joined_by_me, :boolean do
+      calculation expr(exists(user_conversations, user_id == ^actor(:id)))
     end
   end
 end

@@ -1,11 +1,17 @@
 defmodule Hello.Chat.Message do
   use Ash.Resource,
+    otp_app: :hello,
     domain: Hello.Chat,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "messages"
     repo Hello.Repo
+
+    references do
+      reference :conversation, index?: true
+    end
   end
 
   actions do
@@ -21,7 +27,6 @@ defmodule Hello.Chat.Message do
       accept [:content, :sender_type, :sender_id]
 
       argument :conversation_id, :uuid do
-        public? false
         allow_nil? false
       end
     end
@@ -48,7 +53,6 @@ defmodule Hello.Chat.Message do
 
   relationships do
     belongs_to :conversation, Hello.Chat.Conversation do
-      public? true
       allow_nil? false
     end
 

@@ -381,14 +381,9 @@ defmodule HelloWeb.ChatLive.Index do
   defp assign_message_form(socket) do
     conversation = create_conversation_if_not_exist(socket.assigns.conversation)
 
-    form =
-      Hello.Chat.form_to_create_message(
-        sender_type: :user,
-        actor: socket.assigns.current_user,
-        private_arguments: %{conversation_id: conversation.id, sender_type: :user}
-      )
-      |> AshPhoenix.Form.ensure_can_submit!()
-      |> to_form()
+    Hello.Chat.form_to_create_message(conversation.id, actor: socket.assigns.current_user)
+    |> AshPhoenix.Form.ensure_can_submit!()
+    |> to_form()
 
     socket
     |> assign(:message_form, form)
