@@ -18,6 +18,7 @@ defmodule Hello.Chat.Conversation do
 
     create :create do
       accept [:title]
+      primary? true
     end
 
     update :update do

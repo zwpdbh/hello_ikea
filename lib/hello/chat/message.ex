@@ -22,6 +22,7 @@ defmodule Hello.Chat.Message do
 
       argument :conversation_id, :uuid do
         public? false
+        allow_nil? false
       end
     end
   end

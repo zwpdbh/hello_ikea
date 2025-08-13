@@ -97,7 +97,11 @@ defmodule HelloWeb.ChatLive.Index do
             <%= if @messages == [] do %>
               <div class="flex flex-1 items-center justify-center">
                 <div class="w-4/5 rounded-2xl p-4">
-                  <.render_message_form message_form={@message_form} can_submit={@can_submit}>
+                  <.render_message_form
+                    message_form={@message_form}
+                    conversation={@conversation}
+                    can_submit={@can_submit}
+                  >
                   </.render_message_form>
                 </div>
               </div>
@@ -156,7 +160,7 @@ defmodule HelloWeb.ChatLive.Index do
   def render_message_form(assigns) do
     ~H"""
     <.form
-      :let={message_form}
+      :let={form}
       for={@message_form}
       phx-submit="send_message"
       phx-change="validate_message"
@@ -168,9 +172,11 @@ defmodule HelloWeb.ChatLive.Index do
         class="block resize-none w-full rounded-2xl bg-gray-100 p-4 pr-12 placeholder-gray-400 placeholder:text-sm placeholder:italic border-none outline-none"
         placeholder="Enter a message..."
         rows="6"
-        name={message_form[:content].name}
-        value={message_form[:content].value}
+        name={form[:content].name}
+        value={form[:content].value}
       />
+      <.input name="conversation_id" value={@conversation.id} disabled class="hidden" />
+      <.input name="sender_type" value="user" disabled class="hidden" />
       <button
         type="submit"
         class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
@@ -297,13 +303,22 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("validate_message", %{"form" => message_form_params}, socket) do
-    validated_form =
-      AshPhoenix.Form.validate(socket.assigns.message_form, message_form_params)
-
+  def handle_event("validate_message", %{"form" => form_data}, socket) do
     socket =
-      socket
-      |> assign(:can_submit, validated_form.source.valid?)
+      update(socket, :message_form, fn form ->
+        AshPhoenix.Form.validate(form, form_data)
+      end)
+
+    # Now get the updated form from the socket
+    validated_form = socket.assigns.message_form
+
+    # Log validation errors if any
+    unless validated_form.source.valid? do
+      Logger.warning("->> #{inspect(validated_form.errors)}")
+    end
+
+    # Update :can_submit based on validity
+    socket = assign(socket, :can_submit, validated_form.source.valid?)
 
     {:noreply, socket}
   end
@@ -315,10 +330,8 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("send_message", %{"form" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form,
-           params: params
-         )
+  def handle_event("send_message", %{"form" => form_data}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.message_form, params: form_data)
          |> dbg() do
       {:ok, message} ->
         if socket.assigns.conversation do
@@ -330,10 +343,11 @@ defmodule HelloWeb.ChatLive.Index do
         else
           {:noreply,
            socket
-           |> push_navigate(to: ~p"/chats/#{message.conversation_id}")}
+           |> push_patch(to: ~p"/chats/#{message.conversation_id}")}
         end
 
       {:error, form} ->
+        Logger.warning("->> #{inspect(form.errors)}")
         {:noreply, assign(socket, :message_form, form)}
     end
   end
@@ -345,7 +359,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("new_chat", _, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/chats")}
+    {:noreply, push_patch(socket, to: ~p"/chats")}
   end
 
   @impl true
@@ -369,14 +383,16 @@ defmodule HelloWeb.ChatLive.Index do
 
     form =
       Hello.Chat.form_to_create_message(
+        sender_type: :user,
         actor: socket.assigns.current_user,
-        private_arguments: %{conversation_id: conversation.id},
-        sender_type: :user
+        private_arguments: %{conversation_id: conversation.id, sender_type: :user}
       )
+      |> AshPhoenix.Form.ensure_can_submit!()
       |> to_form()
 
     socket
     |> assign(:message_form, form)
+    |> assign(:conversation, conversation)
   end
 
   @impl true
