@@ -260,7 +260,7 @@ defmodule HelloWeb.ChatLive.Index do
       |> assign(:conversation, conversation)
       |> assign(:messages, nil)
       |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
-      |> assign_message_form()
+      |> assign(:message_form, message_form(socket))
 
     {:noreply, socket}
   end
@@ -275,7 +275,7 @@ defmodule HelloWeb.ChatLive.Index do
       socket
       |> assign(:conversation, nil)
       |> stream(:messages, [])
-      |> assign_message_form()
+      |> assign(:message_form, message_form(socket))
 
     {:noreply, socket}
   end
@@ -303,24 +303,11 @@ defmodule HelloWeb.ChatLive.Index do
   end
 
   @impl true
-  def handle_event("validate_message", %{"form" => form_data}, socket) do
-    socket =
-      update(socket, :message_form, fn form ->
-        AshPhoenix.Form.validate(form, form_data)
-      end)
-
-    # Now get the updated form from the socket
-    validated_form = socket.assigns.message_form
-
-    # Log validation errors if any
-    unless validated_form.source.valid? do
-      Logger.warning("->> #{inspect(validated_form.errors)}")
-    end
-
-    # Update :can_submit based on validity
-    socket = assign(socket, :can_submit, validated_form.source.valid?)
-
-    {:noreply, socket}
+  def handle_event("validate_message", %{"form" => %{"content" => content} = form_data}, socket) do
+    {:noreply,
+     socket
+     |> assign(:message_form, AshPhoenix.Form.validate(socket.assigns.message_form, form_data))
+     |> assign(:can_submit, String.trim(content) != "")}
   end
 
   @impl true
@@ -331,12 +318,17 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("send_message", %{"form" => form_data}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form, params: form_data) do
+    case AshPhoenix.Form.submit(
+           socket.assigns.message_form,
+           params:
+             form_data
+             |> Map.put("sender_id", socket.assigns.current_user.id)
+         ) do
       {:ok, message} ->
         if socket.assigns.conversation do
           socket =
             socket
-            |> assign_message_form()
+            |> assign(:message_form, message_form(socket))
             |> assign(:messages, nil)
             |> stream_insert(:messages, message, at: 0)
 
@@ -348,8 +340,7 @@ defmodule HelloWeb.ChatLive.Index do
         end
 
       {:error, form} ->
-        form |> dbg()
-
+        dbg(form)
         {:noreply, assign(socket, :message_form, form)}
     end
   end
@@ -370,27 +361,22 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, socket}
   end
 
-  defp assign_message_form(socket) do
-    form =
+  defp message_form(socket) do
+    args =
       if socket.assigns.conversation do
-        Hello.Chat.form_to_create_message(
-          actor: socket.assigns.current_user,
-          private_arguments: %{
-            conversation_id: socket.assigns.conversation.id,
-            sender_id: socket.assigns.current_user.id
-          }
-        )
-        |> to_form()
+        %{
+          conversation_id: socket.assigns.conversation.id,
+          sender_id: socket.assigns.current_user.id
+        }
       else
-        Hello.Chat.form_to_create_message(actor: socket.assigns.current_user)
-        |> to_form()
+        %{}
       end
 
-    assign(
-      socket,
-      :message_form,
-      form
+    Hello.Chat.form_to_create_message(
+      actor: socket.assigns.current_user,
+      private_arguments: args
     )
+    |> to_form()
   end
 
   @impl true

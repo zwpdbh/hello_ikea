@@ -26,7 +26,7 @@ defmodule Hello.Chat.Message do
       accept [:content]
 
       argument :conversation_id, :uuid do
-        allow_nil? false
+        allow_nil? true
         public? false
       end
 
