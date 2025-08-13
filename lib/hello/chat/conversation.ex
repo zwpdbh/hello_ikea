@@ -1,8 +1,7 @@
 defmodule Hello.Chat.Conversation do
   use Ash.Resource,
     domain: Hello.Chat,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     table "conversations"
@@ -14,7 +13,13 @@ defmodule Hello.Chat.Conversation do
 
     read :my_conversations do
       pagination keyset?: true, required?: false
-      # filter expr(exists(user_conversations, user_id == ^actor(:id)))
+      filter expr(exists(user_conversations, user_id == ^actor(:id)))
+    end
+
+    read :get_by_id do
+      argument :id, :uuid
+      filter expr(id == ^arg(:id) and exists(user_conversations, user_id == ^actor(:id)))
+      get? true
     end
 
     create :create do
@@ -43,8 +48,10 @@ defmodule Hello.Chat.Conversation do
       public? true
     end
 
+    has_many :user_conversations, Hello.Chat.UserConversation
+
     many_to_many :users, Hello.Accounts.User do
-      through Hello.Chat.UserConversation
+      join_relationship :user_conversations
       source_attribute_on_join_resource :conversation_id
       destination_attribute_on_join_resource :user_id
     end

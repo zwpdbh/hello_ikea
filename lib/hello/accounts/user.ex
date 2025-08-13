@@ -287,6 +287,12 @@ defmodule Hello.Accounts.User do
     end
 
     attribute :confirmed_at, :utc_datetime_usec
+
+    attribute :source, Hello.Accounts.User.Types.Source do
+      allow_nil? false
+      public? true
+      default :user
+    end
   end
 
   relationships do

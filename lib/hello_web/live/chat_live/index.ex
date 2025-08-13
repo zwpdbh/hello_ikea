@@ -175,8 +175,6 @@ defmodule HelloWeb.ChatLive.Index do
         name={form[:content].name}
         value={form[:content].value}
       />
-      <.input name="conversation_id" value={@conversation.id} disabled class="hidden" />
-      <.input name="sender_type" value="user" disabled class="hidden" />
       <button
         type="submit"
         class="absolute bottom-3 right-4 p-1 text-blue-500 hover:text-blue-700 focus:outline-none"
@@ -257,12 +255,14 @@ defmodule HelloWeb.ChatLive.Index do
         HelloWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
     end
 
-    socket
-    |> assign(:conversation, conversation)
-    |> assign(:messages, nil)
-    |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
-    |> assign_message_form()
-    |> then(&{:noreply, &1})
+    socket =
+      socket
+      |> assign(:conversation, conversation)
+      |> assign(:messages, nil)
+      |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
+      |> assign_message_form()
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -331,15 +331,16 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("send_message", %{"form" => form_data}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form, params: form_data)
-         |> dbg() do
+    case AshPhoenix.Form.submit(socket.assigns.message_form, params: form_data) do
       {:ok, message} ->
         if socket.assigns.conversation do
-          socket
-          |> assign_message_form()
-          |> assign(:messages, nil)
-          |> stream_insert(:messages, message, at: 0)
-          |> then(&{:noreply, &1})
+          socket =
+            socket
+            |> assign_message_form()
+            |> assign(:messages, nil)
+            |> stream_insert(:messages, message, at: 0)
+
+          {:noreply, socket}
         else
           {:noreply,
            socket
@@ -347,7 +348,8 @@ defmodule HelloWeb.ChatLive.Index do
         end
 
       {:error, form} ->
-        Logger.warning("->> #{inspect(form.errors)}")
+        form |> dbg()
+
         {:noreply, assign(socket, :message_form, form)}
     end
   end
@@ -368,26 +370,27 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, socket}
   end
 
-  defp create_conversation_if_not_exist(conversation) do
-    case conversation do
-      nil ->
-        Hello.Chat.create_conversation!(%{})
-
-      conversation ->
-        conversation
-    end
-  end
-
   defp assign_message_form(socket) do
-    conversation = create_conversation_if_not_exist(socket.assigns.conversation)
+    form =
+      if socket.assigns.conversation do
+        Hello.Chat.form_to_create_message(
+          actor: socket.assigns.current_user,
+          private_arguments: %{
+            conversation_id: socket.assigns.conversation.id,
+            sender_id: socket.assigns.current_user.id
+          }
+        )
+        |> to_form()
+      else
+        Hello.Chat.form_to_create_message(actor: socket.assigns.current_user)
+        |> to_form()
+      end
 
-    Hello.Chat.form_to_create_message(conversation.id, actor: socket.assigns.current_user)
-    |> AshPhoenix.Form.ensure_can_submit!()
-    |> to_form()
-
-    socket
-    |> assign(:message_form, form)
-    |> assign(:conversation, conversation)
+    assign(
+      socket,
+      :message_form,
+      form
+    )
   end
 
   @impl true

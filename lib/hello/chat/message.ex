@@ -2,8 +2,7 @@ defmodule Hello.Chat.Message do
   use Ash.Resource,
     otp_app: :hello,
     domain: Hello.Chat,
-    data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     table "messages"
@@ -24,11 +23,19 @@ defmodule Hello.Chat.Message do
     end
 
     create :create do
-      accept [:content, :sender_type, :sender_id]
+      accept [:content]
 
       argument :conversation_id, :uuid do
         allow_nil? false
+        public? false
       end
+
+      argument :sender_id, :uuid do
+        allow_nil? false
+        public? false
+      end
+
+      change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
     end
   end
 
@@ -39,27 +46,18 @@ defmodule Hello.Chat.Message do
       allow_nil? false
     end
 
-    attribute :sender_type, :atom do
-      allow_nil? false
-      constraints one_of: [:user, :bot, :system]
-    end
-
-    attribute :sender_id, :uuid do
-      allow_nil? true
-    end
-
     timestamps()
   end
 
   relationships do
-    belongs_to :conversation, Hello.Chat.Conversation do
+    belongs_to :sender, Hello.Accounts.User do
+      public? true
       allow_nil? false
+      source_attribute :sender_id
     end
 
-    belongs_to :user, Hello.Accounts.User do
-      public? true
-      allow_nil? true
-      source_attribute :sender_id
+    belongs_to :conversation, Hello.Chat.Conversation do
+      allow_nil? false
     end
   end
 end
