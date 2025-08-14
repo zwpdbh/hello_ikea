@@ -5,7 +5,7 @@ defmodule Hello.Chat do
     resource Hello.Chat.Conversation do
       define :create_conversation, action: :create
       define :my_conversations
-      define :get_conversation_by_id, action: :get_by_id, get_by: [:id]
+      define :get_conversation, action: :read, get_by: [:id]
       define :destroy_conversation, action: :destroy
     end
 

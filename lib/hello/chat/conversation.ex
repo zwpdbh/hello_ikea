@@ -13,13 +13,7 @@ defmodule Hello.Chat.Conversation do
 
     read :my_conversations do
       pagination keyset?: true, required?: false
-      filter expr(exists(user_conversations, user_id == ^actor(:id)))
-    end
-
-    read :get_by_id do
-      argument :id, :uuid
-      filter expr(id == ^arg(:id) and exists(user_conversations, user_id == ^actor(:id)))
-      get? true
+      # filter expr(exists(user_conversations, user_id == ^actor(:id)))
     end
 
     create :create do

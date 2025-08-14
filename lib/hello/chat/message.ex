@@ -30,12 +30,14 @@ defmodule Hello.Chat.Message do
         public? false
       end
 
-      argument :sender_id, :uuid do
+      argument :sender, :map do
+        description "The user who is sending the message"
         allow_nil? false
         public? false
       end
 
       change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
+      change manage_relationship(:sender, :sender, type: :append_and_remove)
     end
   end
 
@@ -50,14 +52,15 @@ defmodule Hello.Chat.Message do
   end
 
   relationships do
+    belongs_to :conversation, Hello.Chat.Conversation do
+      public? true
+      allow_nil? false
+    end
+
     belongs_to :sender, Hello.Accounts.User do
       public? true
       allow_nil? false
       source_attribute :sender_id
-    end
-
-    belongs_to :conversation, Hello.Chat.Conversation do
-      allow_nil? false
     end
   end
 end

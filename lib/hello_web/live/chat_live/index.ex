@@ -11,6 +11,9 @@ defmodule HelloWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     HelloWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_user.id}")
 
+    Hello.Chat.my_conversations!(actor: socket.assigns.current_user, stream?: false)
+    |> dbg()
+
     socket =
       socket
       |> assign(:sidebar_open, true)
@@ -77,10 +80,7 @@ defmodule HelloWeb.ChatLive.Index do
               History
             </div>
 
-            <.render_histories
-              conversations={@streams.conversations}
-              current_conversation={@conversation}
-            />
+            <.render_histories conversations={@streams.conversations} conversation={@conversation} />
           </div>
         </div>
 
@@ -130,7 +130,7 @@ defmodule HelloWeb.ChatLive.Index do
         <div
           id={id}
           class={
-            if @current_conversation && each_conversation.id == @current_conversation.id do
+            if @conversation && each_conversation.id == @conversation.id do
               "bg-gray-300 hover:bg-gray-300 p-1 rounded font-medium flex"
             else
               "hover:bg-gray-200 p-1 rounded flex"
@@ -240,7 +240,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
     conversation =
-      Hello.Chat.get_conversation_by_id!(conversation_id, actor: socket.assigns.current_user)
+      Hello.Chat.get_conversation!(conversation_id, actor: socket.assigns.current_user)
 
     # cond do → checks multiple conditions and runs the first matching block.
     cond do
@@ -258,9 +258,10 @@ defmodule HelloWeb.ChatLive.Index do
     socket =
       socket
       |> assign(:conversation, conversation)
+      |> dbg()
       |> assign(:messages, nil)
       |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
-      |> assign(:message_form, message_form(socket))
+      |> assign_message_form()
 
     {:noreply, socket}
   end
@@ -275,7 +276,7 @@ defmodule HelloWeb.ChatLive.Index do
       socket
       |> assign(:conversation, nil)
       |> stream(:messages, [])
-      |> assign(:message_form, message_form(socket))
+      |> assign_message_form()
 
     {:noreply, socket}
   end
@@ -321,12 +322,13 @@ defmodule HelloWeb.ChatLive.Index do
     case AshPhoenix.Form.submit(
            socket.assigns.message_form,
            params: form_data
-         ) do
+         )
+         |> dbg() do
       {:ok, message} ->
         if socket.assigns.conversation do
           socket =
             socket
-            |> assign(:message_form, message_form(socket))
+            |> assign_message_form()
             |> assign(:messages, nil)
             |> stream_insert(:messages, message, at: 0)
 
@@ -334,11 +336,10 @@ defmodule HelloWeb.ChatLive.Index do
         else
           {:noreply,
            socket
-           |> push_patch(to: ~p"/chats/#{message.conversation_id}")}
+           |> push_navigate(to: ~p"/chats/#{message.conversation_id}")}
         end
 
       {:error, form} ->
-        dbg(form)
         {:noreply, assign(socket, :message_form, form)}
     end
   end
@@ -350,7 +351,7 @@ defmodule HelloWeb.ChatLive.Index do
 
   @impl true
   def handle_event("new_chat", _, socket) do
-    {:noreply, push_patch(socket, to: ~p"/chats")}
+    {:noreply, push_navigate(socket, to: ~p"/chats")}
   end
 
   @impl true
@@ -359,22 +360,30 @@ defmodule HelloWeb.ChatLive.Index do
     {:noreply, socket}
   end
 
-  defp message_form(socket) do
+  defp assign_message_form(socket) do
     args =
-      if socket.assigns.conversation do
-        %{
-          conversation_id: socket.assigns.conversation.id,
-          sender_id: socket.assigns.current_user.id
-        }
-      else
-        %{}
+      case socket.assigns.conversation do
+        nil ->
+          %{
+            sender: socket.assigns.current_user
+          }
+
+        conversation ->
+          %{
+            sender: socket.assigns.current_user,
+            conversation_id: conversation.id
+          }
       end
 
-    Hello.Chat.form_to_create_message(
-      actor: socket.assigns.current_user,
-      private_arguments: args
-    )
-    |> to_form()
+    form =
+      Hello.Chat.form_to_create_message(
+        actor: socket.assigns.current_user,
+        private_arguments: args
+      )
+      |> AshPhoenix.Form.ensure_can_submit!()
+      |> to_form()
+
+    socket |> assign(:message_form, form)
   end
 
   @impl true
@@ -390,5 +399,22 @@ defmodule HelloWeb.ChatLive.Index do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "chat:conversations:" <> _,
+          payload: conversation
+        },
+        socket
+      ) do
+    socket =
+      if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id do
+        assign(socket, :conversation, conversation)
+      else
+        socket
+      end
+
+    {:noreply, stream_insert(socket, :conversations, conversation)}
   end
 end
