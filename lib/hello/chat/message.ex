@@ -38,6 +38,7 @@ defmodule Hello.Chat.Message do
 
       change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
       change manage_relationship(:sender, :sender, type: :append_and_remove)
+      change Hello.Chat.Message.Changes.EnsureSenderInConversation
     end
   end
 

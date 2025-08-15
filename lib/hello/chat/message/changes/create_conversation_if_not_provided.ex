@@ -1,5 +1,4 @@
 defmodule Hello.Chat.Message.Changes.CreateConversationIfNotProvided do
-  require Logger
   use Ash.Resource.Change
 
   require Ash.Query

@@ -25,8 +25,6 @@ defmodule HelloWeb.ChatLive.ChatArea do
 
   @impl true
   def update(%{conversation: conversation, current_user: current_user} = _assigns, socket) do
-    current_user |> dbg()
-
     socket =
       socket
       |> assign(:messages, "in-message-streams")
