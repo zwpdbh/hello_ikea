@@ -3,11 +3,26 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
   use HelloWeb, :live_component
 
   @impl true
+  def mount(socket) do
+    Logger.warning("->> mount is called")
+
+    socket =
+      socket
+      |> assign(:sidebar_open, true)
+
+    {:ok, socket}
+  end
+
+  @impl true
   def update(assigns, socket) do
+    Logger.warning("->> update is called")
+
     {:ok,
      socket
-     |> assign(:sidebar_open, assigns.sidebar_open)
-     |> assign(:conversations, assigns.conversations)
+     |> stream(
+       :conversations,
+       Hello.Chat.my_conversations!(actor: assigns.current_user, stream?: true)
+     )
      |> assign(:conversation, assigns.conversation)
      |> assign(:current_user, assigns.current_user)}
   end
@@ -17,7 +32,7 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
     ~H"""
     <div class={"transition-all duration-300 flex flex-col p-2 space-y-2 bg-gray-100 " <> if(@sidebar_open, do: "w-64", else: "w-16 overflow-hidden")}>
       <div class="flex justify-end">
-        <button phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
+        <button phx-target={@myself} phx-click="toggle_sidebar" class="p-1 hover:bg-gray-400 rounded">
           <.icon
             name={
               if(@sidebar_open,
@@ -30,7 +45,7 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
         </button>
       </div>
 
-      <div :if={@sidebar_open} class="flex-1 flex flex-col space-y-1 overflow-hidden">
+      <div class={"flex-1 flex flex-col space-y-1 overflow-hidden #{if @sidebar_open, do: "", else: "hidden"}"}>
         <div
           class="flex items-center gap-1 hover:bg-gray-200 p-1 rounded text-sm"
           phx-click="new_chat"
@@ -63,7 +78,7 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
           class="flex flex-1 flex-col overflow-y-auto space-y-1"
           phx-update="stream"
         >
-          <%= for {id, each_conversation} <- @conversations do %>
+          <%= for {id, each_conversation} <- @streams.conversations do %>
             <div
               id={id}
               class={
@@ -101,7 +116,7 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
   end
 
   @impl true
-  def handle_event("nav_to_conversation", %{"conversation_id" => conversation_id}, socket) do
+  def handle_event("nav_to_conversation", %{"conversation_id" => _conversation_id}, socket) do
     # pop event to liveview
 
     {:noreply, socket}
@@ -109,7 +124,7 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
 
   @impl true
   def handle_event("toggle_sidebar", _, socket) do
-    {:noreply, update(socket, :sidebar_open, &(!&1))}
+    {:noreply, socket |> assign(:sidebar_open, !socket.assigns.sidebar_open)}
   end
 
   @impl true

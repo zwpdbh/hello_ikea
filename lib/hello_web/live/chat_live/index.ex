@@ -39,8 +39,6 @@ defmodule HelloWeb.ChatLive.Index do
         <.live_component
           module={HelloWeb.ChatLive.ChatSidebar}
           id="chat-sidebar"
-          sidebar_open={@sidebar_open}
-          conversations={@streams.conversations}
           conversation={@conversation}
           current_user={@current_user}
         />
