@@ -14,6 +14,7 @@ defmodule Hello.Chat.Conversation do
     read :my_conversations do
       pagination keyset?: true, required?: false
       # filter expr(exists(user_conversations, user_id == ^actor(:id)))
+      filter expr(joined_by_me == true)
     end
 
     create :create do
@@ -63,15 +64,5 @@ defmodule Hello.Chat.Conversation do
     calculate :joined_by_me, :boolean do
       calculation expr(exists(user_conversations, user_id == ^actor(:id)))
     end
-  end
-end
-
-defmodule Hello.Chat.Conversation.Play do
-  require Ash.Query
-
-  def load_all_conversations() do
-    Hello.Chat.Conversation
-    |> Ash.Query.load(:users)
-    |> Ash.read!(authorize?: false)
   end
 end

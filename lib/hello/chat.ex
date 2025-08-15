@@ -1,5 +1,6 @@
 defmodule Hello.Chat do
   use Ash.Domain, extensions: [AshPhoenix]
+  require Ash.Query
 
   resources do
     resource Hello.Chat.Conversation do
@@ -44,5 +45,23 @@ defmodule Hello.Chat do
         end
       end
     end
+  end
+
+  @doc "List all conversations the user is a member of, using a manually built query."
+  def my_conversations_manual() do
+    Hello.Chat.Conversation
+    # |> Ash.Query.filter(exists(user_conversations, user_id == ^actor_id))
+    # |> Ash.Query.filter(joined_by_me == true)
+    |> Ash.Query.sort(inserted_at: :desc, id: :desc)
+    |> Ash.read!(authorize?: false)
+  end
+
+  @doc """
+  Ecto.Adapters.SQL.query!(Hello.Repo, "SELECT * FROM user_conversations;")
+  """
+  def list_user_conversations() do
+    Hello.Chat.UserConversation
+    |> Ash.Query.limit(10)
+    |> Ash.read!(authorize?: false)
   end
 end
