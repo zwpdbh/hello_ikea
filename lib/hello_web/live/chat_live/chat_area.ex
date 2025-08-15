@@ -1,4 +1,5 @@
 defmodule HelloWeb.ChatLive.ChatArea do
+  require Logger
   use HelloWeb, :live_component
 
   @impl true
@@ -12,6 +13,8 @@ defmodule HelloWeb.ChatLive.ChatArea do
 
   @impl true
   def update(%{conversation: nil, current_user: current_user} = _assigns, socket) do
+    Logger.warning("->> update with empty conversation")
+
     socket =
       socket
       |> assign(:messages, [])
@@ -19,7 +22,6 @@ defmodule HelloWeb.ChatLive.ChatArea do
       |> assign(:current_user, current_user)
       |> assign_message_form()
 
-    # socket.assigns |> dbg()
     {:ok, socket}
   end
 
@@ -28,12 +30,18 @@ defmodule HelloWeb.ChatLive.ChatArea do
     socket =
       socket
       |> assign(:messages, "in-message-streams")
-      |> stream(:messages, Hello.Chat.message_history!(conversation.id, stream?: true))
+      |> stream(
+        :messages,
+        Hello.Chat.message_history!(
+          conversation.id,
+          stream?: true
+        ),
+        reset: true
+      )
       |> assign(:conversation, conversation)
       |> assign(:current_user, current_user)
       |> assign_message_form()
 
-    # socket.assigns |> dbg()
     {:ok, socket}
   end
 
@@ -194,8 +202,7 @@ defmodule HelloWeb.ChatLive.ChatArea do
     case AshPhoenix.Form.submit(
            socket.assigns.message_form,
            params: form_data
-         )
-         |> dbg() do
+         ) do
       {:ok, message} ->
         if socket.assigns.conversation do
           socket =
@@ -214,49 +221,6 @@ defmodule HelloWeb.ChatLive.ChatArea do
         {:noreply, assign(socket, :message_form, form)}
     end
   end
-
-  # @impl true
-  # def handle_event(
-  #       %Phoenix.Socket.Broadcast{
-  #         topic: "chat:messages:" <> conversation_id,
-  #         payload: message
-  #       },
-  #       socket
-  #     ) do
-  #   if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
-  #     {:noreply, stream_insert(socket, :messages, message, at: 0)}
-  #   else
-  #     {:noreply, socket}
-  #   end
-  # end
-
-  # @impl true
-  # def handle_event({:leave_conversation, conversation_id}, socket) do
-  #   Logger.warning(
-  #     "->>TODO: delete conversation: #{conversation_id} for user: #{inspect(socket.assigns.current_user)}"
-  #   )
-
-  #   Hello.Chat.leave_conversation!(conversation_id, actor: socket.assigns.current_user)
-
-  #   {:noreply, socket}
-  # end
-
-  # def handle_event(
-  #       %Phoenix.Socket.Broadcast{
-  #         topic: "chat:conversations:" <> _,
-  #         payload: conversation
-  #       },
-  #       socket
-  #     ) do
-  #   socket =
-  #     if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id do
-  #       assign(socket, :conversation, conversation)
-  #     else
-  #       socket
-  #     end
-
-  #   {:noreply, stream_insert(socket, :conversations, conversation)}
-  # end
 
   defp assign_message_form(socket) do
     args =

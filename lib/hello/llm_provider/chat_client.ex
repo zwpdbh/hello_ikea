@@ -98,7 +98,6 @@ defmodule Hello.LLMProvider.ChatClient do
 
   # defp parse(chunk) do
   #   chunk
-  #   |> dbg()
   #   |> String.split("data: ")
   #   |> Enum.map(&String.trim/1)
   #   |> Enum.map(&decode/1)

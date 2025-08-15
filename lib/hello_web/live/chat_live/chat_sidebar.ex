@@ -4,8 +4,6 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
 
   @impl true
   def mount(socket) do
-    Logger.warning("->> mount is called")
-
     socket =
       socket
       |> assign(:sidebar_open, true)
@@ -15,8 +13,6 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
 
   @impl true
   def update(assigns, socket) do
-    Logger.warning("->> update is called")
-
     {:ok,
      socket
      |> stream(
@@ -116,8 +112,11 @@ defmodule HelloWeb.ChatLive.ChatSidebar do
   end
 
   @impl true
-  def handle_event("nav_to_conversation", %{"conversation_id" => _conversation_id}, socket) do
+  def handle_event("nav_to_conversation", %{"conversation_id" => conversation_id}, socket) do
     # pop event to liveview
+    if socket.assigns.conversation.id != conversation_id do
+      send(self(), {:nav_to_conversation, %{conversation_id: conversation_id}})
+    end
 
     {:noreply, socket}
   end

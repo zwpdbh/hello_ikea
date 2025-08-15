@@ -15,16 +15,8 @@ defmodule HelloWeb.ChatLive.Index do
 
     socket =
       socket
-      |> assign(:sidebar_open, true)
-      |> assign(:messages, [])
-      |> stream(
-        :conversations,
-        Hello.Chat.my_conversations!(actor: socket.assigns.current_user, stream?: true)
-      )
       |> assign(:current_user_id, socket.assigns.current_user.id)
       |> assign(:conversation, nil)
-      |> assign(:can_submit, false)
-      |> assign(:llm_option, :local)
 
     {:ok, socket}
   end
@@ -92,5 +84,10 @@ defmodule HelloWeb.ChatLive.Index do
       |> stream(:messages, [])
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:nav_to_conversation, %{conversation_id: conversation_id}}, socket) do
+    {:noreply, socket |> push_patch(to: ~p"/chats/#{conversation_id}")}
   end
 end
