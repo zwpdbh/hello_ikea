@@ -19,6 +19,11 @@ defmodule Hello.Chat.ConversationMember do
 
   actions do
     defaults [:read]
+
+    create :create do
+      accept [:conversation_id]
+      change relate_actor(:member, allow_nil?: false)
+    end
   end
 
   policies do

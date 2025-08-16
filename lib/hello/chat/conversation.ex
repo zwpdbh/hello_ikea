@@ -15,6 +15,12 @@ defmodule Hello.Chat.Conversation do
       pagination keyset?: true, required?: false
 
       filter expr(join_by_member(member_id: ^actor(:id)) == true)
+      # If calculation is defined as:
+      # calculate :join_by_actor, :boolean do
+      #   calculation expr(exists(conversation_member_relationship, member_id == ^actor(:id)))
+      # end
+      # Then, we could define filter as:
+      # filter expr(join_by_actor == true)
     end
 
     create :create do
