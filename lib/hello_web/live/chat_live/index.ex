@@ -11,7 +11,11 @@ defmodule HelloWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     HelloWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_user.id}")
 
-    Hello.Chat.my_conversations!(actor: socket.assigns.current_user, stream?: false)
+    Hello.Chat.my_conversations!(
+      actor: socket.assigns.current_user,
+      stream?: false,
+      authorize?: false
+    )
 
     socket =
       socket

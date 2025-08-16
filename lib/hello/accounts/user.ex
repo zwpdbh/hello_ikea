@@ -296,10 +296,18 @@ defmodule Hello.Accounts.User do
   end
 
   relationships do
+    # For a user, load all of its conversations
+    has_many :conversation_member_relationship, Hello.Chat.ConversationMember do
+      # This defines the direction of the has_many: from User → ConversationMember using member_id
+      destination_attribute :member_id
+    end
+
     many_to_many :conversations, Hello.Chat.Conversation do
-      through Hello.Chat.UserConversation
-      source_attribute_on_join_resource :user_id
-      destination_attribute_on_join_resource :conversation_id
+      join_relationship :conversation_member_relationship
+
+      # source_attribute_on_join_resource :member_id means
+      # "The member_id field in the join table refers back to the source (this User)"
+      source_attribute_on_join_resource :member_id
     end
   end
 

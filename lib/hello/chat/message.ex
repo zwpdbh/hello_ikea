@@ -25,19 +25,21 @@ defmodule Hello.Chat.Message do
     create :create do
       accept [:content]
 
+      # for private inputs,
+      # see: https://hexdocs.pm/ash/actions.html#private-inputs
       argument :conversation_id, :uuid do
         allow_nil? true
         public? false
       end
 
       argument :sender, :map do
-        description "The user who is sending the message"
         allow_nil? false
         public? false
       end
 
-      change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
       change manage_relationship(:sender, :sender, type: :append_and_remove)
+
+      change Hello.Chat.Message.Changes.CreateConversationIfNotProvided
       change Hello.Chat.Message.Changes.EnsureSenderInConversation
     end
   end

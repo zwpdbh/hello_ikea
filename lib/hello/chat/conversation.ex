@@ -13,8 +13,8 @@ defmodule Hello.Chat.Conversation do
 
     read :my_conversations do
       pagination keyset?: true, required?: false
-      # filter expr(exists(user_conversations, user_id == ^actor(:id)))
-      filter expr(joined_by_me == true)
+
+      filter expr(join_by_member(member_id: ^actor(:id)) == true)
     end
 
     create :create do
@@ -43,12 +43,14 @@ defmodule Hello.Chat.Conversation do
       public? true
     end
 
-    has_many :user_conversations, Hello.Chat.UserConversation
+    # For a conversation, load all of its members
+    # 1. first define a has many relationship for the join resource
+    has_many :conversation_member_relationship, Hello.Chat.ConversationMember
 
-    many_to_many :users, Hello.Accounts.User do
-      join_relationship :user_conversations
-      source_attribute_on_join_resource :conversation_id
-      destination_attribute_on_join_resource :user_id
+    # 2. then define a many_to_many relationship using has_many relationship
+    many_to_many :members, Hello.Accounts.User do
+      join_relationship :conversation_member_relationship
+      destination_attribute_on_join_resource :member_id
     end
   end
 
@@ -61,8 +63,20 @@ defmodule Hello.Chat.Conversation do
                   )
     end
 
-    calculate :joined_by_me, :boolean do
-      calculation expr(exists(user_conversations, user_id == ^actor(:id)))
+    calculate :join_by_member, :boolean do
+      argument :member_id, :uuid do
+        allow_nil? false
+      end
+
+      calculation expr(exists(conversation_member_relationship, member_id == ^arg(:member_id)))
     end
+  end
+end
+
+defmodule Hello.Chat.Conversation.Play do
+  def find_conversation_by_id() do
+    Hello.Chat.Conversation
+    |> Ash.Query.for_read(:read)
+    |> Ash.read(authorize?: false)
   end
 end
